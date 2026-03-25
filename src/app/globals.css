@@ -1,0 +1,147 @@
+@import url('https://api.fontshare.com/v2/css?f[]=clash-display@200,300,400,500,600,700&f[]=cabinet-grotesk@100,200,300,400,500,600,700,800,900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --color-bg: #04050a;
+  --color-surface: #070b14;
+  --color-border: rgba(255, 255, 255, 0.08);
+  --color-brand: #6272f1;
+  --color-accent-cyan: #00e5ff;
+  --color-accent-violet: #8b5cf6;
+  --color-text-primary: #f0f4ff;
+  --color-text-secondary: #8892b0;
+  --gradient-brand: linear-gradient(135deg, #6272f1 0%, #8b5cf6 50%, #00e5ff 100%);
+  --glow-brand: 0 0 40px rgba(98, 114, 241, 0.3);
+  --glow-cyan: 0 0 40px rgba(0, 229, 255, 0.2);
+}
+
+* {
+  box-sizing: border-box;
+  padding: 0;
+  margin: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+  overflow-x: hidden;
+}
+
+body {
+  background-color: var(--color-bg);
+  color: var(--color-text-primary);
+  font-family: 'Cabinet Grotesk', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--color-bg); }
+::-webkit-scrollbar-thumb { background: rgba(98, 114, 241, 0.4); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(98, 114, 241, 0.7); }
+
+/* Selection */
+::selection { background: rgba(98, 114, 241, 0.3); color: #fff; }
+
+/* Gradient text utility */
+.gradient-text {
+  background: var(--gradient-brand);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Noise texture overlay */
+.noise::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+  pointer-events: none;
+  opacity: 0.4;
+  z-index: 0;
+}
+
+/* Glass card */
+.glass {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--color-border);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+/* Glow button */
+.btn-glow {
+  position: relative;
+  overflow: hidden;
+}
+.btn-glow::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, #6272f1, #8b5cf6);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+.btn-glow:hover::before { opacity: 0.15; }
+
+/* Animated grid */
+.grid-bg {
+  background-image: 
+    linear-gradient(rgba(98, 114, 241, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(98, 114, 241, 0.04) 1px, transparent 1px);
+  background-size: 60px 60px;
+}
+
+/* Shimmer line */
+.shimmer-line {
+  background: linear-gradient(90deg, transparent, rgba(98, 114, 241, 0.5), transparent);
+  background-size: 200% auto;
+  animation: shimmer 3s linear infinite;
+}
+
+/* Marquee */
+.marquee-container {
+  overflow: hidden;
+  mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+}
+
+/* Card hover lift */
+.card-hover {
+  transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+}
+.card-hover:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 60px rgba(98, 114, 241, 0.15);
+  border-color: rgba(98, 114, 241, 0.3);
+}
+
+/* Dot grid */
+.dot-grid {
+  background-image: radial-gradient(circle, rgba(98, 114, 241, 0.15) 1px, transparent 1px);
+  background-size: 30px 30px;
+}
+
+/* Swirl Animation */
+@keyframes swirl {
+  0% { transform: rotate(0deg) scale(1); filter: brightness(1) drop-shadow(0 0 5px rgba(98, 114, 241, 0.5)); }
+  50% { transform: rotate(180deg) scale(1.1); filter: brightness(1.2) drop-shadow(0 0 15px rgba(0, 229, 255, 0.7)); }
+  100% { transform: rotate(360deg) scale(1); filter: brightness(1) drop-shadow(0 0 5px rgba(98, 114, 241, 0.5)); }
+}
+
+.animate-swirl {
+  animation: swirl 8s linear infinite;
+}
+
+@keyframes pulse-slow {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.7; }
+}
+
+.animate-pulse-slow {
+  animation: pulse-slow 4s ease-in-out infinite;
+}
