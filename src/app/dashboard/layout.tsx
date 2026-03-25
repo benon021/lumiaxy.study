@@ -19,14 +19,14 @@ export default function DashboardLayout({
         <div className="absolute inset-0 grid-bg opacity-30" />
       </div>
 
-      {/* Sidebar */}
+      {/* Sidebar (Responsive Floating Dock) */}
       <StudentSidebar />
 
-      {/* Main Content */}
-      <div className="flex-1 ml-64 flex flex-col min-h-screen relative z-10">
+      {/* Main Content Area */}
+      <div className="flex-1 flex flex-col min-h-screen relative z-10 lg:pl-32 pb-32 lg:pb-0">
         <StudentTopbar />
         
-        <main className="flex-1 p-8 lg:p-12 overflow-y-auto">
+        <main className="flex-1 p-6 lg:p-12 max-w-[1600px] mx-auto w-full">
           {children}
         </main>
       </div>

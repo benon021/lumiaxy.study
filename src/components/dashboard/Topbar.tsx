@@ -46,9 +46,9 @@ export default function StudentTopbar() {
   const displayRole = user?.role === "STUDENT" ? "Student" : (user?.role || "Lumiaxy User");
 
   return (
-    <header className="h-20 border-b border-white/5 bg-dark-950/40 backdrop-blur-md flex items-center justify-between px-10 sticky top-0 z-40">
+    <header className="h-20 border-b border-white/5 bg-dark-950/40 backdrop-blur-md flex items-center justify-between px-4 lg:px-10 sticky top-0 z-40">
       {/* Search Bar */}
-      <div className="flex-1 max-w-xl">
+      <div className="flex-1 max-w-xl md:block hidden">
         <div className="relative group">
           <div className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20 group-focus-within:text-brand transition-colors">
             <Search size={18} />

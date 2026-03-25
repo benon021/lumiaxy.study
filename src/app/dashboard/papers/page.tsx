@@ -14,7 +14,7 @@ const papers = [
   { id: "6", title: "Literature - Shakespeare Studies", subject: "English", year: 2024, type: "Essay Guide", difficulty: "Easy" },
   { id: "7", title: "Human Geography - Urban Shifts", subject: "Geography", year: 2022, type: "Final Paper", difficulty: "Medium" },
   { id: "8", title: "Applied Physics - Electromagnetism", subject: "Physics", year: 2024, type: "Lab Exam", difficulty: "Hard" },
-];
+] as const;
 
 export default function PastPapersPage() {
   return (
