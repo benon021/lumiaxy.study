@@ -41,7 +41,7 @@ function NavIcon({ href, icon: Icon, label, isActive }: any) {
         className={`flex w-[46px] h-[46px] items-center justify-center rounded-2xl border transition-all duration-300 relative overflow-hidden active:scale-95 group-hover:-translate-y-2 group-hover:scale-[1.15] group-hover:shadow-2xl ${
           isActive 
             ? "bg-brand/20 border-brand/40 text-brand shadow-[0_0_20px_rgba(255,114,0,0.3)] bg-gradient-to-t from-brand/10 to-transparent" 
-            : "bg-white/5 border-white/10 text-white/40 hover:text-white hover:border-white/20 backdrop-blur-md hover:bg-white/10"
+            : "bg-transparent border-transparent text-white/35 hover:text-white hover:border-white/20 backdrop-blur-md hover:bg-white/10"
         }`}
       >
         <Icon size={22} className="relative z-10" />
@@ -105,7 +105,7 @@ export default function StudentSidebar() {
         {/* CENTER ORB (ALWAYS VISIBLE) */}
         <div className="px-1 relative group z-50 flex items-center justify-center">
           <motion.div
-            animate={{ scale: isHovered ? 1 : 1.15 }}
+              animate={{ scale: isHovered ? 1 : 1.15 }}
             transition={{ duration: 0.4, ease: "easeOut" }}
             className="flex items-center justify-center rounded-full"
           >
@@ -138,8 +138,15 @@ export default function StudentSidebar() {
                 setDragEnabled(false);
                   setDragOffset({ x: 0, y: 0 });
               }}
-                animate={{ x: dragOffset.x, y: dragOffset.y }}
-              transition={{ type: "spring", stiffness: 400, damping: 35 }}
+                animate={{
+                  x: dragOffset.x,
+                  y: dragEnabled ? dragOffset.y : [dragOffset.y, dragOffset.y - 3, dragOffset.y],
+                }}
+                transition={{
+                  type: "spring",
+                  stiffness: 420,
+                  damping: 30,
+                }}
               className="rounded-full"
             >
               <AIOrb
@@ -151,10 +158,10 @@ export default function StudentSidebar() {
             </motion.div>
             
             {/* Tooltip */}
-            <div className={`absolute -top-14 left-1/2 -translate-x-1/2 px-3 py-1.5 bg-dark-950 backdrop-blur-md border border-white/10 rounded-xl text-[10px] font-bold text-transparent bg-clip-text bg-gradient-to-r from-brand to-cyan-400 pointer-events-none whitespace-nowrap transition-all duration-300 shadow-2xl ${
+            <div className={`absolute -top-14 left-1/2 -translate-x-1/2 px-3 py-1.5 bg-dark-950/70 backdrop-blur-md border border-white/10 rounded-xl text-[10px] font-bold text-[#ff7200] pointer-events-none whitespace-nowrap transition-all duration-300 shadow-2xl ${
               isHovered ? "opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0" : "opacity-0"
             }`}>
-              Fusion AI Core
+              Lumiaxy.ai
             </div>
           </motion.div>
         </div>

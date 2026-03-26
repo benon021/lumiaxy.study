@@ -55,14 +55,16 @@ function NavIcon({ href, icon: Icon, label, mouseX, isAi }: any) {
         }}
         onMouseLeave={() => distance.set(Infinity)}
         style={{ width, height }}
+        animate={isAi ? { y: [0, -3, 0] } : undefined}
+        transition={isAi ? { duration: 4.5, repeat: Infinity, ease: "easeInOut" } : undefined}
         className={`flex items-center justify-center rounded-2xl border border-white/10 shadow-lg group-hover:shadow-brand-500/40 relative overflow-hidden ${
           isAi 
-            ? "bg-gradient-to-br from-brand-500/20 to-purple-600/20" 
-            : "bg-white/5 backdrop-blur-md"
+            ? "bg-transparent border-transparent shadow-none group-hover:bg-gradient-to-br group-hover:from-brand-500/20 group-hover:to-purple-600/20 group-hover:border-white/10 group-hover:shadow-lg" 
+            : "bg-transparent border-transparent text-white/40 hover:text-white group-hover:bg-white/5 backdrop-blur-md group-hover:border-white/10 shadow-none group-hover:shadow-lg"
         }`}
       >
         {isAi ? (
-          <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center relative overflow-hidden group-hover:border-brand/50 transition-all duration-500">
+          <div className="w-10 h-10 rounded-xl bg-transparent border border-transparent flex items-center justify-center relative overflow-hidden group-hover:bg-white/5 group-hover:border-white/10 group-hover:border-brand/50 transition-all duration-500">
              <AIOrb size={40} state="idle" reactive={false} />
           </div>
         ) : (

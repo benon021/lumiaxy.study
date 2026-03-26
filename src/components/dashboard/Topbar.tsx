@@ -134,7 +134,7 @@ export default function StudentTopbar() {
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: 10, scale: 0.95 }}
                 ref={menuRef as any}
-                className="absolute right-0 mt-3 w-64 glass rounded-[32px] border border-white/10 shadow-[0_25px_70px_rgba(0,0,0,0.5)] p-2 z-50 overflow-hidden"
+                className="absolute right-0 mt-3 w-64 bg-white/[0.04] backdrop-blur-2xl rounded-[32px] border border-white/10 shadow-[0_25px_70px_rgba(0,0,0,0.5)] p-2 z-50 overflow-hidden"
               >
                 <div className="p-5 border-b border-white/5 mb-2 flex items-center gap-4">
                    <div className="w-12 h-12 rounded-2xl bg-brand/20 border border-brand/30 flex items-center justify-center text-brand font-bold">{initials}</div>
