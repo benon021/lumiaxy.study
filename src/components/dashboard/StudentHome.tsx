@@ -229,7 +229,7 @@ export default function StudentHome({ user }: { user: UserLike }) {
           </p>
         </div>
         <a
-          href="/dashboard/materials"
+          href="/dashboard/student/materials"
           className="group relative inline-flex items-center gap-2 px-7 py-3 rounded-2xl bg-brand text-white text-sm font-bold hover:scale-[1.02] transition-all shadow-xl"
         >
           Explore Study Library

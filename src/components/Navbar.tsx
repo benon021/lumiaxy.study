@@ -1,49 +1,31 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Link from "next/link";
-import Image from "next/image";
-import { 
-  FileText, 
-  BookOpen, 
-  Sparkles, 
-  CreditCard, 
-  Mail, 
-  Home,
-  Search,
-  User,
-  Info
-} from "lucide-react";
+import { usePathname } from "next/navigation";
 import { motion, useMotionValue, useSpring, useTransform, AnimatePresence } from "framer-motion";
+import { 
+  Home, Star, Lightbulb, Activity, CreditCard, Layers, LogIn, Menu, X
+} from "lucide-react";
 import AIOrb from "./ai-orb/AIOrb";
 
 const navLinks = [
   { label: "Home", href: "/", icon: Home },
-  { label: "Papers", href: "#papers", icon: FileText },
-  { label: "Notes", href: "#notes", icon: BookOpen },
-  { label: "Lumiaxy.ai", href: "#ai", icon: Sparkles, isAi: true },
-  { label: "About", href: "#about", icon: Info },
-  { label: "Pricing", href: "#pricing", icon: CreditCard },
-  { label: "Contact", href: "#contact", icon: Mail },
+  { label: "Features", href: "/features", icon: Star },
+  { label: "Study Tools", href: "/study-tools", icon: Lightbulb },
+  { label: "How It Works", href: "/how-it-works", icon: Activity },
+  { label: "Pricing", href: "/pricing", icon: CreditCard },
+  { label: "Resources", href: "/resources", icon: Layers },
 ];
 
-function NavIcon({ href, icon: Icon, label, mouseX, isAi }: any) {
-  const ref = (isAi: boolean) => {}; // Placeholder for ref if needed
-  
+function DesktopNavIcon({ href, icon: Icon, label, mouseX }: any) {
   const distance = useMotionValue(Infinity);
-  const widthTransform = useTransform(distance, [-100, 0, 100], [42, 70, 42]);
-  const heightTransform = useTransform(distance, [-100, 0, 100], [42, 70, 42]);
+  // Increased width and hit area from 42/70 to 50/90
+  const widthTransform = useTransform(distance, [-120, 0, 120], [50, 90, 50]);
+  const heightTransform = useTransform(distance, [-120, 0, 120], [50, 90, 50]);
   
-  const width = useSpring(widthTransform, {
-    mass: 0.1,
-    stiffness: 300,
-    damping: 20,
-  });
-  const height = useSpring(heightTransform, {
-    mass: 0.1,
-    stiffness: 300,
-    damping: 20,
-  });
+  const width = useSpring(widthTransform, { mass: 0.1, stiffness: 300, damping: 20 });
+  const height = useSpring(heightTransform, { mass: 0.1, stiffness: 300, damping: 20 });
 
   return (
     <Link href={href} className="relative group">
@@ -55,28 +37,16 @@ function NavIcon({ href, icon: Icon, label, mouseX, isAi }: any) {
         }}
         onMouseLeave={() => distance.set(Infinity)}
         style={{ width, height }}
-        animate={isAi ? { y: [0, -3, 0] } : undefined}
-        transition={isAi ? { duration: 4.5, repeat: Infinity, ease: "easeInOut" } : undefined}
-        className={`flex items-center justify-center rounded-2xl border border-white/10 shadow-lg group-hover:shadow-brand-500/40 relative overflow-hidden ${
-          isAi 
-            ? "bg-transparent border-transparent shadow-none group-hover:bg-gradient-to-br group-hover:from-brand-500/20 group-hover:to-purple-600/20 group-hover:border-white/10 group-hover:shadow-lg" 
-            : "bg-transparent border-transparent text-white/40 hover:text-white group-hover:bg-white/5 backdrop-blur-md group-hover:border-white/10 shadow-none group-hover:shadow-lg"
-        }`}
+        className="flex items-center justify-center rounded-2xl border border-transparent bg-transparent text-white/50 hover:text-white group-hover:bg-white/5 backdrop-blur-md group-hover:border-white/10 shadow-none group-hover:shadow-xl transition-all"
       >
-        {isAi ? (
-          <div className="w-10 h-10 rounded-xl bg-transparent border border-transparent flex items-center justify-center relative overflow-hidden group-hover:bg-white/5 group-hover:border-white/10 group-hover:border-brand/50 transition-all duration-500">
-             <AIOrb size={40} state="idle" reactive={false} />
-          </div>
-        ) : (
-          <Icon className="w-1/2 h-1/2 text-white/70 group-hover:text-white transition-colors" />
-        )}
+        <Icon className="w-1/2 h-1/2 transition-colors" />
         
         {/* Tooltip */}
         <AnimatePresence>
           <motion.div
             initial={{ opacity: 0, y: 10 }}
-            whileHover={{ opacity: 1, y: -45 }}
-            className="absolute left-1/2 -translate-x-1/2 px-2 py-1 bg-dark-800 border border-white/10 rounded-lg text-[10px] font-medium text-white pointer-events-none whitespace-nowrap shadow-xl"
+            whileHover={{ opacity: 1, y: -55 }}
+            className="absolute left-1/2 -translate-x-1/2 px-3 py-1.5 bg-dark-800 border border-white/10 rounded-lg text-xs font-bold text-white pointer-events-none whitespace-nowrap shadow-xl"
           >
             {label}
           </motion.div>
@@ -88,40 +58,90 @@ function NavIcon({ href, icon: Icon, label, mouseX, isAi }: any) {
 
 export default function Navbar() {
   const mouseX = useMotionValue(Infinity);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const pathname = usePathname();
+
+  // If in dashboard, do not show the landing page navbar
+  if (pathname?.startsWith("/dashboard")) return null;
 
   return (
-    <div className="fixed bottom-6 left-0 right-0 z-50 flex justify-center px-4">
-      <motion.nav
-        initial={{ y: 100, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ type: "spring", stiffness: 260, damping: 20 }}
-        className="flex items-end gap-3 px-4 py-3 bg-dark-900/40 backdrop-blur-2xl border border-white/10 rounded-3xl shadow-2xl h-[70px]"
-        onMouseMove={(e) => mouseX.set(e.pageX)}
-        onMouseLeave={() => mouseX.set(Infinity)}
-      >
-        {navLinks.map((link) => (
-          <NavIcon 
-            key={link.href} 
-            {...link} 
-            mouseX={mouseX} 
-          />
-        ))}
-        
-        <div className="w-[1px] h-8 bg-white/10 mx-1 mb-2" />
-        
-        <NavIcon 
-          href="#search" 
-          icon={Search} 
-          label="Search" 
-          mouseX={mouseX} 
-        />
-        <NavIcon 
-          href="/login" 
-          icon={User} 
-          label="Account" 
-          mouseX={mouseX} 
-        />
-      </motion.nav>
-    </div>
+    <>
+      {/* --- DESKTOP NAVBAR --- */}
+      <div className="hidden md:flex fixed bottom-8 left-0 right-0 z-50 justify-center px-4">
+        <motion.nav
+          initial={{ y: 150, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ type: "spring", stiffness: 260, damping: 20 }}
+          className="flex items-end gap-3 px-4 py-3 bg-dark-900/60 backdrop-blur-2xl border border-white/10 rounded-3xl shadow-2xl h-[85px]"
+          onMouseMove={(e) => mouseX.set(e.pageX)}
+          onMouseLeave={() => mouseX.set(Infinity)}
+        >
+          {/* Logo / Home */}
+          <Link href="/" className="relative group mr-2 h-[50px] w-[50px] flex items-center justify-center">
+            <div className="w-full h-full flex items-center justify-center bg-transparent group-hover:scale-110 transition-transform">
+               <AIOrb size={44} state="idle" reactive={false} className="opacity-80 group-hover:opacity-100" />
+            </div>
+          </Link>
+
+          <div className="w-[1px] h-8 bg-white/10 mx-1 mb-3" />
+
+          {navLinks.slice(1).map((link) => (
+            <DesktopNavIcon key={link.href} {...link} mouseX={mouseX} />
+          ))}
+          
+          <div className="w-[1px] h-8 bg-white/10 mx-1 mb-3" />
+          
+          <Link href="/login" className="mb-1 ml-2">
+            <div className="h-[50px] px-6 rounded-2xl bg-brand text-white text-sm font-bold flex items-center gap-2 hover:scale-[1.03] active:scale-95 transition-all shadow-lg shadow-brand/20">
+              <LogIn size={16} /> Login
+            </div>
+          </Link>
+        </motion.nav>
+      </div>
+
+      {/* --- MOBILE NAVBAR --- */}
+      <div className="md:hidden fixed top-0 left-0 right-0 z-50 px-4 py-4">
+        <div className="flex items-center justify-between bg-dark-900/80 backdrop-blur-xl border border-white/10 rounded-2xl px-4 py-3 shadow-2xl">
+           <Link href="/" className="flex items-center gap-2">
+              <AIOrb size={28} state="idle" reactive={false} />
+              <span className="font-bold text-white text-sm tracking-widest">LUMIAXY</span>
+           </Link>
+           <button 
+             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+             className="p-2 -mr-2 text-white/70 hover:text-white"
+           >
+             {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+           </button>
+        </div>
+
+        {/* Mobile Dropdown */}
+        <AnimatePresence>
+          {mobileMenuOpen && (
+            <motion.div 
+              initial={{ opacity: 0, y: -20, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -20, scale: 0.95 }}
+              className="absolute top-20 left-4 right-4 bg-dark-900/95 backdrop-blur-2xl border border-white/10 rounded-3xl p-6 shadow-2xl flex flex-col gap-4"
+            >
+               {navLinks.map((link) => (
+                 <Link 
+                   key={link.href} href={link.href} 
+                   onClick={() => setMobileMenuOpen(false)}
+                   className="flex items-center gap-4 text-white/70 hover:text-white hover:bg-white/5 p-4 rounded-2xl font-bold text-lg transition-colors"
+                 >
+                   <link.icon size={20} className="text-brand" /> {link.label}
+                 </Link>
+               ))}
+               <div className="h-[1px] w-full bg-white/10 my-2" />
+               <Link href="/login" onClick={() => setMobileMenuOpen(false)}>
+                 <div className="w-full py-4 rounded-xl bg-brand text-white text-center font-bold text-lg shadow-lg">
+                   Sign / Log In
+                 </div>
+               </Link>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+    </>
   );
 }

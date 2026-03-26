@@ -1,9 +1,9 @@
 import { getUserFromRequest } from "@/lib/auth";
 import { redirect } from "next/navigation";
-import TeacherGradingClient from "./TeacherGradingClient";
+import TeacherAssignmentsClient from "./TeacherAssignmentsClient";
 
-export default async function TeacherGradingPage() {
+export default async function TeacherAssignmentsPage() {
   const user = await getUserFromRequest();
   if (!user || user.role !== "TEACHER") redirect("/dashboard");
-  return <TeacherGradingClient />;
+  return <TeacherAssignmentsClient />;
 }

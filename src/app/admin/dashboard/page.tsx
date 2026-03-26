@@ -15,6 +15,7 @@ import CalendarPanel from "@/components/admin/CalendarPanel";
 import QuickTasks from "@/components/admin/QuickTasks";
 import Footer from "@/components/admin/Footer";
 import SystemStatus from "@/components/admin/SystemStatus";
+import PricingManager from "@/components/admin/PricingManager";
 
 export default function AdminDashboard() {
   const [activeView, setActiveView] = useState("Overview");
@@ -55,6 +56,7 @@ export default function AdminDashboard() {
                   <AIAssistant />
                </div>
             </div>
+            <PricingManager />
           </motion.div>
         );
       case "Users":

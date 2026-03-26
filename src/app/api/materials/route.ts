@@ -2,67 +2,65 @@ import { NextResponse } from "next/server";
 import prisma from "@/lib/db";
 import { getUserFromRequest } from "@/lib/auth";
 
-export async function GET(req: Request) {
-  const { searchParams } = new URL(req.url);
-  const topicId = searchParams.get("topicId");
-
-  const materials = await prisma.material.findMany({
-    where: topicId ? { topicId } : undefined,
-    include: { author: { select: { id: true, name: true } } },
-    orderBy: [ { isPinned: "desc" }, { createdAt: "desc" } ],
-  });
-  return NextResponse.json(materials);
-}
-
 export async function POST(req: Request) {
   try {
-    const user = await getUserFromRequest(req);
-    if (!user || user.role !== "TEACHER") return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
-
-    const { title, description, topicId, type, fileUrl, videoUrl } = await req.json();
-
-    const material = await prisma.material.create({
-      data: { title, description, topicId, type, fileUrl, videoUrl, authorId: user.id },
-      include: { topic: { select: { subject: { select: { name: true } } } } }
-    });
-
-    // Notify all students following this teacher
-    const followers = await prisma.follow.findMany({
-      where: { teacherId: user.id },
-      select: { followerId: true },
-    });
-    if (followers.length > 0) {
-      await prisma.notification.createMany({
-        data: followers.map((f) => ({
-          userId: f.followerId,
-          type: "NEW_MATERIAL",
-          message: `${user.name} uploaded a new ${type.toLowerCase()} in ${material.topic.subject.name}: ${title}`,
-          link: `/dashboard/materials?topic=${topicId}`
-        }))
-      });
+    const user = await getUserFromRequest(req as any);
+    if (!user || user.role !== "TEACHER") {
+      return NextResponse.json({ error: "Unauthorized. Must be a Teacher." }, { status: 403 });
     }
 
-    return NextResponse.json(material, { status: 201 });
+    const { title, description, type, fileUrl, topicId } = await req.json();
+
+    if (!title || !type) {
+      return NextResponse.json({ error: "Missing required fields." }, { status: 400 });
+    }
+
+    // Since topics might be empty, if topicId isn't provided or doesn't exist, we will create a default 'General' topic.
+    let targetTopicId = topicId;
+    if (!targetTopicId) {
+      // Find or create a default Subject and Topic
+      let defaultSubject = await prisma.subject.findFirst();
+      if (!defaultSubject) {
+         defaultSubject = await prisma.subject.create({
+           data: { name: "General Studies", description: "Default subject" }
+         });
+      }
+      
+      let defaultTopic = await prisma.topic.findFirst({ where: { subjectId: defaultSubject.id }});
+      if (!defaultTopic) {
+         defaultTopic = await prisma.topic.create({
+           data: { name: "General Concepts", subjectId: defaultSubject.id }
+         });
+      }
+      targetTopicId = defaultTopic.id;
+    }
+
+    const material = await prisma.material.create({
+      data: {
+        title,
+        description,
+        type, 
+        fileUrl, // Will hold Base64 for the mockup, or a strict URL.
+        topicId: targetTopicId,
+        authorId: user.id
+      }
+    });
+
+    return NextResponse.json({ success: true, material }, { status: 201 });
   } catch (error) {
-    return NextResponse.json({ error: "Failed to create material" }, { status: 500 });
+    console.error("Material Upload Error:", error);
+    return NextResponse.json({ error: "Failed to upload material" }, { status: 500 });
   }
 }
 
-export async function DELETE(req: Request) {
+export async function GET(req: Request) {
   try {
-    const user = await getUserFromRequest(req);
-    if (!user || user.role !== "TEACHER") return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
-
-    const { searchParams } = new URL(req.url);
-    const id = searchParams.get("id");
-    if (!id) return NextResponse.json({ error: "Missing ID" }, { status: 400 });
-
-    const material = await prisma.material.findUnique({ where: { id } });
-    if (!material || material.authorId !== user.id) return NextResponse.json({ error: "Not found or unauthorized" }, { status: 403 });
-
-    await prisma.material.delete({ where: { id } });
-    return NextResponse.json({ success: true });
+    const materials = await prisma.material.findMany({
+      include: { author: { select: { name: true, avatarUrl: true }} },
+      orderBy: { createdAt: "desc" }
+    });
+    return NextResponse.json({ success: true, materials });
   } catch (error) {
-    return NextResponse.json({ error: "Failed to delete" }, { status: 500 });
+    return NextResponse.json({ error: "Failed to fetch materials" }, { status: 500 });
   }
 }
