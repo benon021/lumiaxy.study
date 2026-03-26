@@ -23,9 +23,9 @@ export default function Footer() {
 
       <div className="flex items-center gap-6">
         <div className="flex items-center gap-4 border-r border-white/5 pr-6 mr-2">
-          <a href="#" className="text-white/20 hover:text-white transition-colors"><Github size={16} /></a>
-          <a href="#" className="text-white/20 hover:text-white transition-colors"><Twitter size={16} /></a>
-          <a href="#" className="text-white/20 hover:text-white transition-colors"><Globe size={16} /></a>
+          <a href="/social/github" className="text-white/20 hover:text-white transition-colors"><Github size={16} /></a>
+          <a href="/social/twitter" className="text-white/20 hover:text-white transition-colors"><Twitter size={16} /></a>
+          <a href="/status" className="text-white/20 hover:text-white transition-colors"><Globe size={16} /></a>
         </div>
         
         <p className="text-[10px] text-white/20 flex items-center gap-1.5 font-bold uppercase tracking-[0.2em]">

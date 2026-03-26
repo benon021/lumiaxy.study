@@ -1,104 +1,57 @@
 "use client";
 
-import { motion, useMotionValue, useSpring, useTransform, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { 
-  LayoutDashboard, 
-  FileText, 
-  Sparkles, 
-  BarChart3, 
-  User, 
-  Settings, 
-  LogOut
+  LayoutDashboard, FileText, BarChart3, User, 
+  Bell, UploadCloud, CheckCircle2, Star, Link2
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import Image from "next/image";
-import { useState, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import AIOrb from "../ai-orb/AIOrb";
 
-const navItems = [
+const studentLeftItems = [
   { label: "Dashboard", icon: LayoutDashboard, href: "/dashboard" },
-  { label: "Past Papers", icon: FileText, href: "/dashboard/papers" },
-  { label: "AI Assistant", icon: Sparkles, href: "/dashboard/ai", isAi: true },
+  { label: "Teachers", icon: User, href: "/dashboard/teachers" },
+  { label: "Materials", icon: FileText, href: "/dashboard/materials" },
+  { label: "Assignments", icon: Link2, href: "/dashboard/assignments" },
+];
+
+const studentRightItems = [
   { label: "Progress", icon: BarChart3, href: "/dashboard/progress" },
-];
-
-const bottomItems = [
+  { label: "Notifications", icon: Bell, href: "/dashboard/notifications" },
   { label: "Profile", icon: User, href: "/dashboard/profile" },
-  { label: "Settings", icon: Settings, href: "/dashboard/settings" },
 ];
 
-function NavIcon({ href, icon: Icon, label, mouseX, isAi, isActive, onClick }: any) {
-  const distance = useMotionValue(Infinity);
-  // Magnification effect: size ranges from 48px (normal) to 72px (magnified)
-  const sizeTransform = useTransform(distance, [-150, 0, 150], [48, 72, 48]);
-  const size = useSpring(sizeTransform, {
-    mass: 0.1,
-    stiffness: 300,
-    damping: 20,
-  });
+const teacherLeftItems = [
+  { label: "Dashboard", icon: LayoutDashboard, href: "/dashboard" },
+  { label: "My Uploads", icon: UploadCloud, href: "/dashboard/teacher/content" },
+];
 
+const teacherRightItems = [
+  { label: "Grading", icon: CheckCircle2, href: "/dashboard/teacher/grading" },
+  { label: "Reviews", icon: Star, href: "/dashboard/teacher/reviews" },
+  { label: "Notifications", icon: Bell, href: "/dashboard/notifications" },
+];
+
+function NavIcon({ href, icon: Icon, label, isActive }: any) {
   return (
-    <Link href={href} className="relative group">
-      <motion.div
-        onMouseMove={(e) => {
-          const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-          // Vertical distance for sidebar, Horizontal for bottom bar
-          // We'll use a simplified version that works for both but prioritizes the dominant axis
-          const isMobile = window.innerWidth < 1024;
-          if (isMobile) {
-            const centerX = rect.left + rect.width / 2;
-            distance.set(e.pageX - centerX);
-          } else {
-            const centerY = rect.top + rect.height / 2;
-            distance.set(e.pageY - centerY);
-          }
-        }}
-        onMouseLeave={() => distance.set(Infinity)}
-        style={{ width: size, height: size }}
-        className={`flex items-center justify-center rounded-2xl border transition-colors duration-300 relative overflow-hidden ${
+    <Link href={href} className="relative group p-1 block">
+      <div
+        className={`flex w-[46px] h-[46px] items-center justify-center rounded-2xl border transition-all duration-300 relative overflow-hidden active:scale-95 group-hover:-translate-y-2 group-hover:scale-[1.15] group-hover:shadow-2xl ${
           isActive 
-            ? "bg-brand/20 border-brand/40 text-brand shadow-[0_0_20px_rgba(98,114,241,0.2)]" 
-            : "bg-white/5 border-white/10 text-white/40 hover:text-white hover:border-white/20 backdrop-blur-md"
-        } ${isAi ? "shadow-[0_0_15px_rgba(98,114,241,0.3)]" : ""}`}
-        onClick={onClick}
+            ? "bg-brand/20 border-brand/40 text-brand shadow-[0_0_20px_rgba(255,114,0,0.3)] bg-gradient-to-t from-brand/10 to-transparent" 
+            : "bg-white/5 border-white/10 text-white/40 hover:text-white hover:border-white/20 backdrop-blur-md hover:bg-white/10"
+        }`}
       >
-        {isAi && (
-           <div className="absolute inset-0 bg-gradient-to-br from-brand/20 to-purple-600/20 animate-pulse" />
-        )}
-        
-        <Icon size={24} className="relative z-10" />
-        
-        {/* Active Indicator Dot */}
+        <Icon size={22} className="relative z-10" />
         {isActive && (
-          <motion.div 
-            layoutId="active-indicator"
-            className="absolute right-1 w-1 h-1 rounded-full bg-brand shadow-[0_0_8px_#6272f1] lg:block hidden"
-          />
+          <motion.div layoutId="active-indicator" className="absolute bottom-1 w-1 h-1 rounded-full bg-brand shadow-[0_0_8px_#ff7200]" />
         )}
-        {isActive && (
-          <motion.div 
-            layoutId="active-indicator-mobile"
-            className="absolute bottom-1 w-1 h-1 rounded-full bg-brand shadow-[0_0_8px_#6272f1] lg:hidden block"
-          />
-        )}
-
-        {/* Tooltip / Context Label */}
-        <AnimatePresence>
-          <motion.div
-            initial={{ opacity: 0, x: -10 }}
-            whileHover={{ opacity: 1, x: 10 }}
-            className="absolute left-full ml-4 px-3 py-1.5 bg-dark-800/90 backdrop-blur-md border border-white/10 rounded-xl text-xs font-bold text-white pointer-events-none whitespace-nowrap shadow-2xl lg:block hidden z-50"
-          >
-            {label}
-            {isAi && <span className="ml-2 text-[10px] text-brand uppercase tracking-tighter italic">Fusion AI</span>}
-          </motion.div>
-        </AnimatePresence>
-        
-        {/* Mobile Label (always visible or on small hover) */}
-        <div className="absolute -top-10 left-1/2 -translate-x-1/2 px-2 py-1 bg-dark-800 border border-white/10 rounded-lg text-[10px] font-medium text-white pointer-events-none whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity lg:hidden">
+        <div className="absolute -top-12 left-1/2 -translate-x-1/2 px-3 py-1.5 bg-dark-950 backdrop-blur-md border border-white/10 rounded-xl text-[10px] font-bold text-white pointer-events-none whitespace-nowrap opacity-0 group-hover:opacity-100 transition-all duration-200 translate-y-2 group-hover:translate-y-0 shadow-2xl z-50">
           {label}
         </div>
-      </motion.div>
+      </div>
     </Link>
   );
 }
@@ -106,108 +59,121 @@ function NavIcon({ href, icon: Icon, label, mouseX, isAi, isActive, onClick }: a
 export default function StudentSidebar() {
   const pathname = usePathname();
   const router = useRouter();
-  const mouseAxis = useMotionValue(Infinity);
+  const [role, setRole] = useState("STUDENT");
+  const [isHovered, setIsHovered] = useState(false);
+  const [dragEnabled, setDragEnabled] = useState(false);
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  const longPressTimerRef = useRef<any>(null);
 
-  const handleLogout = async () => {
-    await fetch("/api/auth/logout", { method: "POST" });
-    router.push("/login");
-  };
+  useEffect(() => {
+    fetch("/api/auth/me")
+      .then(res => res.json())
+      .then(data => { if (data?.user?.role) setRole(data.user.role); })
+      .catch(console.error);
+  }, []);
+
+  const leftItems = role === "TEACHER" ? teacherLeftItems : studentLeftItems;
+  const rightItems = role === "TEACHER" ? teacherRightItems : studentRightItems;
 
   return (
-    <>
-      {/* Desktop Sidebar (Left Dock) */}
-      <div className="fixed left-6 top-1/2 -translate-y-1/2 z-50 hidden lg:flex">
-        <motion.nav
-          initial={{ x: -100, opacity: 0 }}
-          animate={{ x: 0, opacity: 1 }}
-          className="flex flex-col items-center gap-4 p-3 bg-dark-900/40 backdrop-blur-2xl border border-white/10 rounded-[32px] shadow-2xl"
-          onMouseMove={(e) => mouseAxis.set(e.pageY)}
-          onMouseLeave={() => mouseAxis.set(Infinity)}
-        >
-          {/* Logo Area */}
-          <Link href="/" className="mb-4 p-2 group">
-             <div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center relative overflow-hidden group-hover:border-brand/50 transition-all duration-500">
-                <Image 
-                   src="/fusion-orb.png" 
-                   alt="Lumiaxy" 
-                   width={40} 
-                   height={40} 
-                   className="animate-swirl group-hover:scale-110 transition-transform duration-700"
-                />
-             </div>
-          </Link>
+    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[100] flex justify-center w-full px-6 pointer-events-none">
+      <motion.nav
+        initial={{ y: 100, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ type: "spring", stiffness: 260, damping: 20 }}
+        onHoverStart={() => setIsHovered(true)}
+        onHoverEnd={() => setIsHovered(false)}
+        className={`flex items-center p-2 bg-white/5 backdrop-blur-2xl border border-white/10 shadow-[0_30px_60px_rgba(0,0,0,0.5)] pointer-events-auto transition-all duration-500 ease-out ${
+          isHovered ? "rounded-[32px] gap-2 px-3" : "rounded-full gap-0 px-2"
+        }`}
+      >
+        {/* LEFT ICONS */}
+        <AnimatePresence>
+          {isHovered && (
+            <motion.div
+              initial={{ width: 0, opacity: 0, paddingRight: 0 }}
+              animate={{ width: "auto", opacity: 1, paddingRight: 8 }}
+              exit={{ width: 0, opacity: 0, paddingRight: 0 }}
+              transition={{ duration: 0.4, ease: [0.2, 0.8, 0.2, 1] }}
+              className="flex items-center gap-1 overflow-hidden"
+            >
+              {leftItems.map((item) => <NavIcon key={item.href} {...item} isActive={pathname === item.href} />)}
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-          <div className="w-8 h-[1px] bg-white/10 mb-2" />
-
-          {navItems.map((item) => (
-            <NavIcon 
-              key={item.href} 
-              {...item} 
-              isActive={pathname === item.href}
-              mouseX={mouseAxis}
-            />
-          ))}
-          
-          <div className="w-8 h-[1px] bg-white/10 my-2" />
-          
-          {bottomItems.map((item) => (
-            <NavIcon 
-              key={item.href} 
-              {...item} 
-              isActive={pathname === item.href}
-              mouseX={mouseAxis}
-            />
-          ))}
-
-          <div className="flex-1 min-h-[20px]" />
-
-          {/* Logout */}
-          <button 
-            onClick={handleLogout}
-            className="w-12 h-12 flex items-center justify-center rounded-2xl bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500 hover:text-white transition-all duration-300 group relative"
+        {/* CENTER ORB (ALWAYS VISIBLE) */}
+        <div className="px-1 relative group z-50 flex items-center justify-center">
+          <motion.div
+            animate={{ scale: isHovered ? 1 : 1.15 }}
+            transition={{ duration: 0.4, ease: "easeOut" }}
+            className="flex items-center justify-center rounded-full"
           >
-            <LogOut size={20} />
-            <div className="absolute left-full ml-4 px-3 py-1.5 bg-red-900/90 backdrop-blur-md border border-red-500/20 rounded-xl text-xs font-bold text-white opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap">
-              Sign Out
+            <motion.div
+              drag={dragEnabled}
+              dragMomentum={false}
+                onDrag={(_, info) => {
+                  setDragOffset({ x: info.offset.x, y: info.offset.y });
+                }}
+              onPointerDown={() => {
+                if (longPressTimerRef.current) clearTimeout(longPressTimerRef.current);
+                longPressTimerRef.current = setTimeout(() => setDragEnabled(true), 350);
+              }}
+              onPointerUp={async () => {
+                if (longPressTimerRef.current) clearTimeout(longPressTimerRef.current);
+                if (!dragEnabled) {
+                  router.push("/dashboard/ai");
+                  return;
+                }
+                setDragEnabled(false);
+                  setDragOffset({ x: 0, y: 0 });
+              }}
+              onPointerCancel={() => {
+                if (longPressTimerRef.current) clearTimeout(longPressTimerRef.current);
+                setDragEnabled(false);
+                  setDragOffset({ x: 0, y: 0 });
+              }}
+              onDragEnd={(_, info) => {
+                // snap back to original position after drag
+                setDragEnabled(false);
+                  setDragOffset({ x: 0, y: 0 });
+              }}
+                animate={{ x: dragOffset.x, y: dragOffset.y }}
+              transition={{ type: "spring", stiffness: 400, damping: 35 }}
+              className="rounded-full"
+            >
+              <AIOrb
+                size={isHovered ? 48 : 64}
+                state={pathname === "/dashboard/ai" ? "speaking" : "idle"}
+                reactive={!isHovered}
+                className="transition-all duration-500"
+              />
+            </motion.div>
+            
+            {/* Tooltip */}
+            <div className={`absolute -top-14 left-1/2 -translate-x-1/2 px-3 py-1.5 bg-dark-950 backdrop-blur-md border border-white/10 rounded-xl text-[10px] font-bold text-transparent bg-clip-text bg-gradient-to-r from-brand to-cyan-400 pointer-events-none whitespace-nowrap transition-all duration-300 shadow-2xl ${
+              isHovered ? "opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0" : "opacity-0"
+            }`}>
+              Fusion AI Core
             </div>
-          </button>
-        </motion.nav>
-      </div>
+          </motion.div>
+        </div>
 
-      {/* Mobile Submenu / Bottom Dock */}
-      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 lg:hidden flex justify-center w-full px-6">
-        <motion.nav
-          initial={{ y: 100, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          className="flex items-center gap-3 px-4 py-3 bg-dark-900/60 backdrop-blur-3xl border border-white/10 rounded-3xl shadow-2xl h-[72px] max-w-full overflow-x-auto no-scrollbar"
-          onMouseMove={(e) => mouseAxis.set(e.pageX)}
-          onMouseLeave={() => mouseAxis.set(Infinity)}
-        >
-          {navItems.map((item) => (
-            <NavIcon 
-              key={item.href} 
-              {...item} 
-              isActive={pathname === item.href}
-              mouseX={mouseAxis}
-            />
-          ))}
-          <div className="w-[1px] h-8 bg-white/10 mx-1" />
-          {bottomItems.map((item) => (
-            <NavIcon 
-              key={item.href} 
-              {...item} 
-              isActive={pathname === item.href}
-              mouseX={mouseAxis}
-            />
-          ))}
-          <button 
-            onClick={handleLogout}
-            className="w-12 h-12 min-w-[48px] flex items-center justify-center rounded-2xl bg-red-500/10 border border-red-500/20 text-red-400"
-          >
-            <LogOut size={18} />
-          </button>
-        </motion.nav>
-      </div>
-    </>
+        {/* RIGHT ICONS */}
+        <AnimatePresence>
+          {isHovered && (
+            <motion.div
+              initial={{ width: 0, opacity: 0, paddingLeft: 0 }}
+              animate={{ width: "auto", opacity: 1, paddingLeft: 8 }}
+              exit={{ width: 0, opacity: 0, paddingLeft: 0 }}
+              transition={{ duration: 0.4, ease: [0.2, 0.8, 0.2, 1] }}
+              className="flex items-center gap-1 overflow-hidden"
+            >
+              {rightItems.map((item) => <NavIcon key={item.href} {...item} isActive={pathname === item.href} />)}
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </motion.nav>
+    </div>
   );
 }

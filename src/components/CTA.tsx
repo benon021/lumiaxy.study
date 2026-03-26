@@ -2,7 +2,8 @@
 
 import { motion } from "framer-motion";
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Sparkles, ShieldCheck, Zap } from "lucide-react";
+import AIOrb from "./ai-orb/AIOrb";
 import Image from "next/image";
 
 export default function CTA() {
@@ -53,15 +54,9 @@ export default function CTA() {
             viewport={{ once: true }}
             transition={{ delay: 0.1, duration: 0.6 }}
           >
-            <div className="inline-flex items-center justify-center w-20 h-20 rounded-full mb-8 mx-auto overflow-hidden bg-white/5 border border-white/10 shadow-2xl p-1">
-              <Image 
-                src="/fusion-orb.png" 
-                alt="Lumiaxy.ai Orb" 
-                width={80} 
-                height={80} 
-                className="object-cover rounded-full animate-swirl" 
-              />
-            </div>
+            <div className="w-20 h-20 rounded-3xl bg-brand/20 border border-brand/30 flex items-center justify-center relative overflow-hidden mb-8 group-hover:scale-110 transition-transform duration-700 mx-auto">
+             <AIOrb size={80} state="idle" reactive={false} />
+          </div>
 
             <h2 className="font-display font-bold text-4xl sm:text-5xl lg:text-6xl tracking-tight mb-6">
               Ready to ace your{" "}

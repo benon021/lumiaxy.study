@@ -21,7 +21,8 @@ export default function Topbar() {
   const [showProfile, setShowProfile] = useState(false);
   const router = useRouter();
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    await fetch("/api/auth/logout", { method: "POST" });
     router.push("/");
   };
 

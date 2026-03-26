@@ -1,5 +1,6 @@
 import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
+import prisma from "./prisma";
 
 const secretKey = process.env.JWT_SECRET_KEY || "fallback_secret_key_for_development";
 const key = new TextEncoder().encode(secretKey);
@@ -55,4 +56,24 @@ export function clearSession() {
     expires: new Date(0),
     path: "/",
   });
+}
+
+/**
+ * Reads the JWT session cookie and returns the current authenticated user from DB.
+ * Returns null if not authenticated.
+ */
+export async function getUserFromRequest(_req?: Request) {
+  try {
+    const session = cookies().get("session")?.value;
+    if (!session) return null;
+    const payload = await decrypt(session);
+    if (!payload?.id) return null;
+    const user = await prisma.user.findUnique({
+      where: { id: payload.id as string },
+      select: { id: true, name: true, email: true, role: true },
+    });
+    return user;
+  } catch {
+    return null;
+  }
 }

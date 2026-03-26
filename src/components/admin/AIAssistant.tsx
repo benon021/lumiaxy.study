@@ -11,6 +11,7 @@ import {
   Cpu
 } from "lucide-react";
 import Image from "next/image";
+import AIOrb from "../ai-orb/AIOrb";
 
 export default function AIAssistant() {
   return (
@@ -46,16 +47,7 @@ export default function AIAssistant() {
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-cyan/10 rounded-full blur-[80px] animate-pulse-slow delay-700" />
           
           {/* Main Visual Orb */}
-          <div className="relative w-32 h-32 rounded-full border border-white/10 bg-dark-900/50 backdrop-blur-3xl p-1 overflow-hidden shadow-[0_0_50px_rgba(98,114,241,0.3)] group-hover:shadow-[0_0_80px_rgba(98,114,241,0.5)] transition-all duration-700">
-             <div className="w-full h-full rounded-full overflow-hidden relative border-2 border-white/5">
-                <Image 
-                  src="/fusion-orb.png" 
-                  alt="AI Assistant" 
-                  fill
-                  className="object-cover animate-swirl"
-                />
-             </div>
-          </div>
+          <AIOrb size={128} className="relative z-10" />
         </div>
 
         <motion.div 

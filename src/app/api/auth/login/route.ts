@@ -13,27 +13,6 @@ export async function POST(req: Request) {
       );
     }
 
-    // Check for bypass (mock mode)
-    const isBypass = email.endsWith("@test.com") || email.endsWith("@lumiaxy.study") || password === "bypass";
-
-    if (isBypass) {
-      // COMPLETE BYPASS: No Database required for mock accounts
-      const dummyId = "mock_" + Math.random().toString(36).substring(7);
-      const role = email.includes("admin") ? "ADMIN" : "STUDENT";
-      const name = email.split("@")[0].charAt(0).toUpperCase() + email.split("@")[0].slice(1);
-      
-      await setSession(dummyId, role);
-      
-      return NextResponse.json(
-        { 
-          success: true, 
-          user: { id: dummyId, email, name, role } 
-        },
-        { status: 200 }
-      );
-    }
-
-    // Normal logic for non-bypass accounts
     const prisma = (await import("@/lib/db")).default;
     const user = await prisma.user.findUnique({
       where: { email },
@@ -46,15 +25,12 @@ export async function POST(req: Request) {
       );
     }
 
-    // Skip password comparison if bypass
-    if (!isBypass) {
-      const isPasswordValid = await bcrypt.compare(password, user.password);
-      if (!isPasswordValid) {
-        return NextResponse.json(
-          { error: "Invalid credentials" },
-          { status: 401 }
-        );
-      }
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid) {
+      return NextResponse.json(
+        { error: "Invalid credentials" },
+        { status: 401 }
+      );
     }
 
     // Set JWT session

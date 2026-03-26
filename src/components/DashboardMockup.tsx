@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 import { BarChart2, Globe, Shield, Code2, TrendingUp } from "lucide-react";
-import Image from "next/image";
+import AIOrb from "./ai-orb/AIOrb";
 
 const metrics = [
   { label: "Study Hours", value: "248", change: "+12%", color: "#6272f1" },
@@ -47,15 +47,9 @@ export default function DashboardMockup() {
         <div className="flex flex-col gap-3">
           {/* Logo/brand area */}
           <div className="glass rounded-xl p-4 flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-white/5 border border-white/10 overflow-hidden">
-              <Image 
-                src="/fusion-orb.png" 
-                alt="Logo" 
-                width={32} 
-                height={32} 
-                className="animate-swirl"
-              />
-            </div>
+              <div className="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center relative overflow-hidden group-hover:border-brand/40 transition-colors">
+                <AIOrb size={32} state="idle" reactive={false} />
+              </div>
             <div>
               <p className="text-sm font-semibold text-white">Lumiaxy.study</p>
               <p className="text-xs text-white/40">Student Hub v2</p>

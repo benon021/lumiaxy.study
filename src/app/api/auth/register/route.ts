@@ -1,58 +1,42 @@
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { setSession } from "@/lib/auth";
+import prisma from "@/lib/db";
 
 export async function POST(req: Request) {
   try {
-    const { name, email, password } = await req.json();
+    const { name, email, password, role, credentials, officeHours, contactInfo } = await req.json();
 
-    if (!email || !name) {
-      return NextResponse.json(
-        { error: "Missing required fields" },
-        { status: 400 }
-      );
+    if (!email || !name || !password) {
+      return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
-    // Check for bypass (mock mode)
-    const isBypass = email.endsWith("@test.com") || email.endsWith("@lumiaxy.study");
-
-    if (isBypass) {
-      const dummyId = "mock_" + Math.random().toString(36).substring(7);
-      const role = email.includes("admin") ? "ADMIN" : "STUDENT";
-      
-      await setSession(dummyId, role);
-      
-      return NextResponse.json(
-        { success: true, user: { id: dummyId, email, name, role } },
-        { status: 201 }
-      );
-    }
-
-    const prisma = (await import("@/lib/db")).default;
-    const existingUser = await prisma.user.findUnique({
-      where: { email },
-    });
-
+    const existingUser = await prisma.user.findUnique({ where: { email } });
     if (existingUser) {
-      return NextResponse.json(
-        { error: "User already exists with this email" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "User already exists with this email" }, { status: 400 });
     }
 
-    // For bypass/mock mode, we can use a dummy password if none provided
-    const hashedPassword = await bcrypt.hash(password || "mocked_password", 10);
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const userRole = role === "TEACHER" ? "TEACHER" : role === "ADMIN" ? "ADMIN" : "STUDENT";
 
     const user = await prisma.user.create({
       data: {
         name,
         email,
         password: hashedPassword,
-        role: email.includes("admin") ? "ADMIN" : "STUDENT",
+        role: userRole,
+        ...(userRole === "TEACHER" && {
+          teacherProfile: {
+            create: {
+              credentials: credentials || "",
+              officeHours: officeHours || "",
+              contactInfo: contactInfo || email,
+            },
+          },
+        }),
       },
     });
 
-    // Automatically log them in by setting the session
     await setSession(user.id, user.role);
 
     return NextResponse.json(
@@ -60,10 +44,7 @@ export async function POST(req: Request) {
       { status: 201 }
     );
   } catch (error) {
-    console.error("Registration block error:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+    console.error("Registration error:", error);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

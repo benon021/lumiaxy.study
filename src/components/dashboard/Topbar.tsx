@@ -14,7 +14,7 @@ import {
   Settings,
   CreditCard
 } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 
 export default function StudentTopbar() {
@@ -22,6 +22,7 @@ export default function StudentTopbar() {
   const [isDark, setIsDark] = useState(true);
   const [user, setUser] = useState<{name: string, email: string, role: string} | null>(null);
   const router = useRouter();
+  const menuRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     async function loadUser() {
@@ -36,9 +37,26 @@ export default function StudentTopbar() {
     loadUser();
   }, []);
 
+  useEffect(() => {
+    const onDown = (e: MouseEvent) => {
+      if (!showProfile) return;
+      const el = menuRef.current;
+      if (!el) return;
+      if (el.contains(e.target as Node)) return;
+      setShowProfile(false);
+    };
+    window.addEventListener("mousedown", onDown);
+    return () => window.removeEventListener("mousedown", onDown);
+  }, [showProfile]);
+
   const handleLogout = async () => {
     await fetch("/api/auth/logout", { method: "POST" });
-    router.push("/login");
+    router.push("/");
+  };
+
+  const go = (path: string) => {
+    setShowProfile(false);
+    router.push(path);
   };
 
   const displayName = user?.name || "Student";
@@ -75,11 +93,17 @@ export default function StudentTopbar() {
           >
             {isDark ? <Sun size={18} /> : <Moon size={18} />}
           </button>
-          <button className="p-2 rounded-xl text-white/40 hover:text-white hover:bg-white/5 transition-all relative">
+          <button
+            onClick={() => router.push("/dashboard/notifications")}
+            className="p-2 rounded-xl text-white/40 hover:text-white hover:bg-white/5 transition-all relative"
+          >
             <Bell size={18} />
             <span className="absolute top-2 right-2 w-2 h-2 bg-brand rounded-full border-2 border-dark-900 shadow-[0_0_10px_rgba(98,114,241,0.5)]" />
           </button>
-          <button className="p-2 rounded-xl text-white/40 hover:text-white hover:bg-white/5 transition-all">
+          <button
+            onClick={() => router.push("/dashboard/messages")}
+            className="p-2 rounded-xl text-white/40 hover:text-white hover:bg-white/5 transition-all"
+          >
             <Inbox size={18} />
           </button>
         </div>
@@ -109,6 +133,7 @@ export default function StudentTopbar() {
                 initial={{ opacity: 0, y: 10, scale: 0.95 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                ref={menuRef as any}
                 className="absolute right-0 mt-3 w-64 glass rounded-[32px] border border-white/10 shadow-[0_25px_70px_rgba(0,0,0,0.5)] p-2 z-50 overflow-hidden"
               >
                 <div className="p-5 border-b border-white/5 mb-2 flex items-center gap-4">
@@ -120,19 +145,28 @@ export default function StudentTopbar() {
                 </div>
                 
                 <div className="space-y-1">
-                  <button className="w-full flex items-center justify-between px-4 py-3 text-xs font-bold text-white/60 hover:text-white hover:bg-white/5 rounded-2xl transition-all group">
+                  <button
+                    onClick={() => go("/dashboard/profile")}
+                    className="w-full flex items-center justify-between px-4 py-3 text-xs font-bold text-white/60 hover:text-white hover:bg-white/5 rounded-2xl transition-all group"
+                  >
                     <div className="flex items-center gap-3">
                       <User size={16} className="text-white/20 group-hover:text-brand transition-colors" />
                       My Profile
                     </div>
                   </button>
-                  <button className="w-full flex items-center justify-between px-4 py-3 text-xs font-bold text-white/60 hover:text-white hover:bg-white/5 rounded-2xl transition-all group">
+                  <button
+                    onClick={() => go("/dashboard/subscription")}
+                    className="w-full flex items-center justify-between px-4 py-3 text-xs font-bold text-white/60 hover:text-white hover:bg-white/5 rounded-2xl transition-all group"
+                  >
                     <div className="flex items-center gap-3">
                       <CreditCard size={16} className="text-white/20 group-hover:text-emerald-400 transition-colors" />
                       Subscription
                     </div>
                   </button>
-                  <button className="w-full flex items-center justify-between px-4 py-3 text-xs font-bold text-white/60 hover:text-white hover:bg-white/5 rounded-2xl transition-all group">
+                  <button
+                    onClick={() => go("/dashboard/settings")}
+                    className="w-full flex items-center justify-between px-4 py-3 text-xs font-bold text-white/60 hover:text-white hover:bg-white/5 rounded-2xl transition-all group"
+                  >
                     <div className="flex items-center gap-3">
                       <Settings size={16} className="text-white/20 group-hover:text-amber-400 transition-colors" />
                       Settings

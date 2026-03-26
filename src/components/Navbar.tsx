@@ -15,6 +15,7 @@ import {
   Info
 } from "lucide-react";
 import { motion, useMotionValue, useSpring, useTransform, AnimatePresence } from "framer-motion";
+import AIOrb from "./ai-orb/AIOrb";
 
 const navLinks = [
   { label: "Home", href: "/", icon: Home },
@@ -61,14 +62,8 @@ function NavIcon({ href, icon: Icon, label, mouseX, isAi }: any) {
         }`}
       >
         {isAi ? (
-          <div className="relative w-full h-full flex items-center justify-center p-2">
-            <Image 
-              src="/fusion-orb.png" 
-              alt="Lumiaxy.ai" 
-              width={60} 
-              height={60} 
-              className="object-cover rounded-full animate-swirl" 
-            />
+          <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center relative overflow-hidden group-hover:border-brand/50 transition-all duration-500">
+             <AIOrb size={40} state="idle" reactive={false} />
           </div>
         ) : (
           <Icon className="w-1/2 h-1/2 text-white/70 group-hover:text-white transition-colors" />

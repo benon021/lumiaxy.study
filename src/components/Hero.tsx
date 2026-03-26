@@ -106,7 +106,7 @@ export default function Hero() {
           <Link
             href="/signup"
             className="group relative inline-flex items-center gap-2 px-8 py-3.5 rounded-2xl text-base font-semibold text-white overflow-hidden transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]"
-            style={{ background: "linear-gradient(135deg, #6272f1 0%, #8b5cf6 100%)" }}
+            style={{ background: "linear-gradient(135deg, #ff7200 0%, #ea580c 100%)" }}
           >
             <span className="relative z-10">Get Started Free</span>
             <ArrowRight className="relative z-10 w-4 h-4 group-hover:translate-x-1 transition-transform" />
@@ -114,7 +114,7 @@ export default function Hero() {
             <div
               className="absolute -inset-1 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"
               style={{
-                background: "linear-gradient(135deg, #6272f1, #8b5cf6)",
+                background: "linear-gradient(135deg, #ff7200, #ea580c)",
                 filter: "blur(12px)",
                 zIndex: -1,
               }}

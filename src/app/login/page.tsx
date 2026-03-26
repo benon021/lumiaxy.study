@@ -3,15 +3,8 @@
 import { motion } from "framer-motion";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { 
-  Mail, 
-  Lock, 
-  ArrowRight, 
-  Sparkles,
-  ShieldCheck,
-  Cpu,
-  ArrowLeft
-} from "lucide-react";
+import { ArrowLeft, Mail, Lock, Eye, EyeOff, Github, Chrome, ArrowRight } from "lucide-react";
+import AIOrb from "@/components/ai-orb/AIOrb";
 import Link from "next/link";
 import Image from "next/image";
 
@@ -83,16 +76,8 @@ export default function LoginPage() {
       >
         {/* Logo/Brand Area */}
         <div className="flex flex-col items-center mb-10 text-center">
-          <div className="w-16 h-16 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center mb-6 relative group overflow-hidden">
-             <Image 
-                src="/fusion-orb.png" 
-                alt="Lumiaxy" 
-                width={64} 
-                height={64} 
-                priority
-                className="animate-swirl group-hover:scale-110 transition-transform duration-700"
-             />
-             <div className="absolute inset-0 bg-brand/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+          <div className="w-16 h-16 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center relative overflow-hidden mb-6 mx-auto group-hover:border-brand/50 transition-all duration-500">
+             <AIOrb size={64} state="idle" reactive={false} />
           </div>
           <h1 className="text-4xl font-bold tracking-tight text-white mb-2">Welcome Back</h1>
           <p className="text-white/40 text-sm max-w-[280px]">Enter your futuristic credentials to access your dashboard</p>
@@ -151,7 +136,7 @@ export default function LoginPage() {
               type="submit"
               disabled={isLoading}
               className="w-full group relative overflow-hidden rounded-2xl py-4 text-sm font-bold text-white transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:scale-100"
-              style={{ background: "linear-gradient(135deg, #6272f1 0%, #8b5cf6 100%)" }}
+              style={{ background: "linear-gradient(135deg, #ff7200 0%, #ea580c 100%)" }}
             >
               <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity" />
               <span className="relative z-10 flex items-center justify-center gap-2">

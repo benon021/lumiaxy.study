@@ -1,21 +1,45 @@
 "use client";
 
 import Link from "next/link";
-import { Twitter, Github, Linkedin, ArrowUpRight } from "lucide-react";
+import { Github, Twitter, Linkedin, Mail, Sparkles, ArrowUpRight } from "lucide-react";
+import AIOrb from "./ai-orb/AIOrb";
 import Image from "next/image";
 import { motion } from "framer-motion";
 
 const footerLinks = {
-  Study: ["Past Papers", "Study Notes", "Lumiaxy.ai", "Flashcards", "Practice Tests"],
-  Subjects: ["Mathematics", "Physics", "Chemistry", "Biology", "History"],
-  Company: ["About Us", "Blog", "Careers", "Support", "Contact"],
-  Legal: ["Privacy Policy", "Terms", "Security", "Cookie Policy"],
+  Study: [
+    { label: "Past Papers", href: "/dashboard/papers" },
+    { label: "Study Notes", href: "/dashboard/materials" },
+    { label: "Lumiaxy.ai", href: "/dashboard/ai" },
+    { label: "Flashcards", href: "/dashboard/flashcards" },
+    { label: "Practice Tests", href: "/dashboard/quiz" },
+  ],
+  Subjects: [
+    { label: "Mathematics", href: "/dashboard/materials" },
+    { label: "Physics", href: "/dashboard/materials" },
+    { label: "Chemistry", href: "/dashboard/materials" },
+    { label: "Biology", href: "/dashboard/materials" },
+    { label: "History", href: "/dashboard/materials" },
+  ],
+  Company: [
+    { label: "About Us", href: "/about" },
+    { label: "Blog", href: "/blog" },
+    { label: "Careers", href: "/careers" },
+    { label: "Support", href: "/support" },
+    { label: "Contact", href: "/contact" },
+  ],
+  Legal: [
+    { label: "Privacy Policy", href: "/legal/privacy" },
+    { label: "Terms", href: "/legal/terms" },
+    { label: "Security", href: "/legal/security" },
+    { label: "Cookie Policy", href: "/legal/cookies" },
+  ],
 };
 
 const socials = [
-  { icon: Twitter, label: "Twitter", href: "#" },
-  { icon: Github, label: "GitHub", href: "#" },
-  { icon: Linkedin, label: "LinkedIn", href: "#" },
+  { icon: Twitter, label: "Twitter", href: "/social/twitter" },
+  { icon: Github, label: "GitHub", href: "/social/github" },
+  { icon: Linkedin, label: "LinkedIn", href: "/social/linkedin" },
 ];
 
 export default function Footer() {
@@ -26,7 +50,7 @@ export default function Footer() {
         className="absolute top-0 left-0 right-0 h-px"
         style={{
           background:
-            "linear-gradient(90deg, transparent, rgba(98,114,241,0.4) 50%, transparent)",
+            "linear-gradient(90deg, transparent, rgba(255,114,0,0.4) 50%, transparent)",
         }}
       />
 
@@ -36,15 +60,9 @@ export default function Footer() {
           {/* Brand */}
           <div className="lg:col-span-2">
             <Link href="/" className="inline-flex items-center gap-2.5 mb-5">
-              <div className="relative w-10 h-10 rounded-full flex items-center justify-center shadow-[0_0_15px_rgba(98,114,241,0.2)] bg-white/5 border border-white/10 overflow-hidden p-1">
-                <Image 
-                  src="/fusion-orb.png" 
-                  alt="Lumiaxy Logo" 
-                  width={40} 
-                  height={40} 
-                  className="object-cover rounded-full animate-swirl" 
-                />
-              </div>
+              <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center relative overflow-hidden">
+               <AIOrb size={40} state="idle" reactive={false} />
+            </div>
               <span className="font-display font-bold text-2xl text-white">Lumiaxy<span className="gradient-text">.study</span></span>
             </Link>
 
@@ -78,12 +96,12 @@ export default function Footer() {
                 </h4>
                 <ul className="flex flex-col gap-2.5">
                   {links.map((link) => (
-                    <li key={link}>
+                    <li key={link.label}>
                       <Link
-                        href="#"
+                        href={link.href}
                         className="text-sm text-white/40 hover:text-white/80 transition-colors duration-200"
                       >
-                        {link}
+                        {link.label}
                       </Link>
                     </li>
                   ))}
@@ -111,7 +129,7 @@ export default function Footer() {
             />
             <button
               className="px-5 py-2.5 rounded-xl text-sm font-semibold text-white flex-shrink-0 transition-all hover:opacity-90 active:scale-95"
-              style={{ background: "linear-gradient(135deg, #6272f1, #8b5cf6)" }}
+              style={{ background: "linear-gradient(135deg, #ff7200, #ea580c)" }}
             >
               Get Updates
             </button>
@@ -127,7 +145,7 @@ export default function Footer() {
             <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
             All systems operational
             <Link
-              href="#"
+              href="/status"
               className="ml-1 inline-flex items-center gap-0.5 hover:text-white/60 transition-colors"
             >
               status.lumiaxy.io <ArrowUpRight className="w-3 h-3" />
