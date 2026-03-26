@@ -1,356 +1,361 @@
 "use client";
 
-import { motion, AnimatePresence } from "framer-motion";
+import { useState, useRef, useEffect } from "react";
 import { 
   Send, 
-  Bot, 
-  User, 
+  Plus, 
   Sparkles, 
-  MoreHorizontal, 
-  RotateCcw,
+  MessageSquare, 
+  History, 
+  Bookmark, 
+  ChevronLeft, 
+  ChevronRight,
+  LogOut,
+  User,
+  Settings,
+  MoreVertical,
   Paperclip,
-  Camera,
-  X,
-  Image as ImageIcon
+  Image as ImageIcon,
+  FileText
 } from "lucide-react";
-import { useState, useRef, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import AIOrb, { AIOrbState } from "@/components/ai-orb/AIOrb";
 import Image from "next/image";
 
 interface Message {
-  id: string;
-  role: "user" | "assistant";
+  role: 'user' | 'assistant';
   content: string;
-  timestamp: Date;
-  image?: string;
 }
 
-export default function AIChat() {
-  const [messages, setMessages] = useState<Message[]>([
-    { 
-      id: "1", 
-      role: "assistant", 
-      content: "Hello! I'm your Lumiaxy AI study partner. How can I help you today? You can ask questions, upload an image of your notes/problems, or use your camera to capture something for me to analyze!", 
-      timestamp: new Date() 
-    }
-  ]);
-  const [input, setInput] = useState("");
-  const [isTyping, setIsTyping] = useState(false);
-  const [selectedImage, setSelectedImage] = useState<string | null>(null);
-  const [cameraActive, setCameraActive] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+interface UserData {
+  name: string;
+  email: string;
+}
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
+const AI_HISTORY_KEY = "lumiaxy_ai_history_v1";
+
+type AiLocalMessage = {
+  id: string;
+  createdAt: string; // ISO
+  userText: string;
+  assistantText: string;
+};
+
+export default function AIChat() {
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [input, setInput] = useState("");
+  const [orbState, setOrbState] = useState<AIOrbState>("idle");
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [userData, setUserData] = useState<UserData | null>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    scrollToBottom();
-  }, [messages, isTyping]);
-
-  const handleImageFile = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setSelectedImage(reader.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const startCamera = async () => {
-    try {
-      setCameraActive(true);
-      const stream = await navigator.mediaDevices.getUserMedia({ 
-        video: { facingMode: "environment" } 
-      });
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
+    // Fetch user data
+    const fetchUser = async () => {
+      try {
+        const res = await fetch("/api/auth/me");
+        if (res.ok) {
+          const data = await res.json();
+          setUserData(data.user);
+        }
+      } catch (err) {
+        console.error("Failed to fetch user:", err);
       }
-    } catch (err) {
-      console.error("Error accessing camera:", err);
-      setError("Failed to access camera. Please check permissions.");
-      setCameraActive(false);
-    }
-  };
-
-  const stopCamera = () => {
-    if (videoRef.current && videoRef.current.srcObject) {
-      const tracks = (videoRef.current.srcObject as MediaStream).getTracks();
-      tracks.forEach(track => track.stop());
-      videoRef.current.srcObject = null;
-    }
-    setCameraActive(false);
-  };
-
-  const capturePhoto = () => {
-    if (videoRef.current && canvasRef.current) {
-      const video = videoRef.current;
-      const canvas = canvasRef.current;
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-      const ctx = canvas.getContext("2d");
-      ctx?.drawImage(video, 0, 0);
-      setSelectedImage(canvas.toDataURL("image/jpeg"));
-      stopCamera();
-    }
-  };
-
-  const handleSend = async (e?: React.FormEvent) => {
-    e?.preventDefault();
-    if (!input.trim() && !selectedImage) return;
-
-    setError(null);
-    const userMessage: Message = {
-      id: Date.now().toString(),
-      role: "user",
-      content: input,
-      timestamp: new Date(),
-      image: selectedImage || undefined
     };
+    fetchUser();
+  }, []);
 
-    setMessages(prev => [...prev, userMessage]);
-    
-    // API formatting
-    const chatHistory = messages.map(m => ({
-      role: m.role,
-      content: m.content
-    })).concat({
-      role: "user",
-      content: input
-    });
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, [messages]);
 
-    const currentImage = selectedImage;
+  const handleSend = async () => {
+    if (!input.trim()) return;
+
+    const userMessage = input;
     setInput("");
-    setSelectedImage(null);
-    setIsTyping(true);
+    setOrbState("thinking");
+
+    const userPart = { role: "user" as const, content: userMessage };
+    const nextMessages = [...messages, userPart];
+    setMessages(nextMessages);
 
     try {
       const res = await fetch("/api/ai", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          messages: chatHistory,
-          image: currentImage 
-        })
+        body: JSON.stringify({ messages: nextMessages }),
       });
 
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed to get AI response");
+      if (!res.ok) {
+        throw new Error(data?.error || "Failed to get AI response");
+      }
 
-      setMessages(prev => [...prev, {
-        id: (Date.now() + 1).toString(),
-        role: "assistant",
-        content: data.content,
-        timestamp: new Date()
-      }]);
+      const assistantPart = {
+        role: "assistant" as const,
+        content: data?.content || data?.message || "No response",
+      };
+
+      setOrbState("speaking");
+      setMessages((prev) => [...prev, assistantPart]);
+
+      const localItem: AiLocalMessage = {
+        id: `${Date.now()}_${Math.random().toString(16).slice(2)}`,
+        createdAt: new Date().toISOString(),
+        userText: userMessage,
+        assistantText: assistantPart.content,
+      };
+
+      try {
+        const storedRaw = localStorage.getItem(AI_HISTORY_KEY);
+        const stored = storedRaw ? (JSON.parse(storedRaw) as AiLocalMessage[]) : [];
+        const next = Array.isArray(stored) ? [...stored, localItem].slice(-300) : [localItem];
+        localStorage.setItem(AI_HISTORY_KEY, JSON.stringify(next));
+      } catch {
+        // Ignore localStorage failures (private mode, etc.)
+      }
+
+      setTimeout(() => setOrbState("idle"), 1200);
     } catch (err: any) {
-      console.error("Chat error:", err);
-      setError(err.message);
-    } finally {
-      setIsTyping(false);
+      const assistantPart = {
+        role: "assistant" as const,
+        content: err?.message || "AI request failed. Please try again.",
+      };
+      setMessages((prev) => [...prev, assistantPart]);
+      setOrbState("idle");
     }
   };
 
-  return (
-    <div className="flex flex-col h-[calc(100vh-180px)] glass rounded-[32px] border border-white/10 overflow-hidden shadow-2xl relative">
-      <canvas ref={canvasRef} className="hidden" />
-      
-      {/* Header */}
-      <div className="p-6 border-b border-white/10 flex items-center justify-between bg-white/[0.02] relative z-20">
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded-2xl bg-brand/20 border border-brand/30 flex items-center justify-center relative overflow-hidden">
-             <Image 
-                src="/fusion-orb.png" 
-                alt="AI" 
-                width={48} 
-                height={48} 
-                className="animate-swirl"
-                priority
-             />
-          </div>
-          <div>
-            <h2 className="text-lg font-bold text-white tracking-tight">Lumiaxy.ai</h2>
-            <div className="flex items-center gap-2">
-               <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-               <span className="text-[10px] font-bold text-white/40 uppercase tracking-widest">Advanced Vision Active</span>
-            </div>
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-           <button 
-            onClick={() => setMessages([{ id: "1", role: "assistant", content: "Chat cleared. How can I help you?", timestamp: new Date() }])}
-            className="p-2.5 rounded-xl bg-white/5 border border-white/10 text-white/40 hover:text-white transition-all"
-           >
-              <RotateCcw size={18} />
-           </button>
-        </div>
-      </div>
+  const recentSessions = [
+    "Quantum Physics Intro",
+    "Biology Mock Test Prep",
+    "Calc Home Assignment",
+    "History Summary Prep"
+  ];
 
-      {/* Camera View Overlay */}
-      <AnimatePresence>
-        {cameraActive && (
+  return (
+    <div className="flex absolute inset-0 pt-20 lg:pt-0 overflow-hidden">
+      {/* Sidebar */}
+      <AnimatePresence mode="wait">
+        {isSidebarOpen && (
           <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="absolute inset-0 z-50 bg-black flex flex-col items-center justify-center"
+            initial={{ width: 0, opacity: 0 }}
+            animate={{ width: 280, opacity: 1 }}
+            exit={{ width: 0, opacity: 0 }}
+            transition={{ type: "spring", stiffness: 300, damping: 30 }}
+            className="h-full bg-dark-950/40 backdrop-blur-xl border-r border-white/5 flex flex-col relative z-30"
           >
-            <video ref={videoRef} autoPlay playsInline className="h-full w-full object-cover" />
-            <div className="absolute bottom-10 flex items-center gap-10">
-               <button onClick={stopCamera} className="w-14 h-14 rounded-full bg-white/10 border border-white/20 flex items-center justify-center text-white"><X size={24} /></button>
-               <button onClick={capturePhoto} className="w-20 h-20 rounded-full bg-white border-4 border-white/30 flex items-center justify-center" />
-               <div className="w-14 h-14" /> {/* Spacer */}
+            <div className="p-4 flex flex-col h-full w-[280px]">
+              {/* Sidebar Header */}
+              <div className="flex items-center justify-between mb-8 px-2">
+                 <h2 className="text-lg font-bold text-white tracking-tight flex items-center gap-2">
+                    Lumiaxy<span className="gradient-text">.ai</span>
+                 </h2>
+                 <button 
+                  onClick={() => setIsSidebarOpen(false)}
+                  className="p-2 glass rounded-lg text-white/40 hover:text-white transition-all"
+                >
+                  <ChevronLeft size={16} />
+                </button>
+              </div>
+
+              {/* New Chat Button */}
+              <button className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-white/5 border border-white/10 text-sm font-bold text-white hover:bg-white/10 transition-all mb-8 w-full group">
+                <Plus size={18} className="text-brand group-hover:rotate-90 transition-transform" />
+                New Session
+              </button>
+
+              {/* Recent Sessions */}
+              <div className="flex-1 overflow-y-auto space-y-6 scrollbar-hide">
+                 <div className="space-y-4">
+                    <div className="flex items-center justify-between px-2">
+                      <h3 className="text-[10px] font-bold text-white/20 uppercase tracking-widest flex items-center gap-2">
+                        <History size={12} />
+                        Recent Sessions
+                      </h3>
+                      <button className="text-[10px] font-bold text-white/20 hover:text-white transition-colors">See All</button>
+                    </div>
+                    <div className="space-y-1">
+                      {recentSessions.map((session, i) => (
+                        <button key={i} className="w-full text-left px-4 py-3 rounded-xl hover:bg-white/5 text-xs text-white/40 hover:text-white transition-all group flex items-center gap-3">
+                          <MessageSquare size={14} className="opacity-0 group-hover:opacity-100 text-brand" />
+                          <span className="truncate">{session}</span>
+                        </button>
+                      ))}
+                    </div>
+                 </div>
+
+                 <div className="space-y-4">
+                    <h3 className="text-[10px] font-bold text-white/20 uppercase tracking-widest flex items-center gap-2 px-2">
+                      <Bookmark size={12} />
+                      Saved
+                    </h3>
+                    <p className="px-4 text-[11px] text-white/20 italic">No saved explanations yet.</p>
+                 </div>
+              </div>
+
+              {/* User Profile / Bottom Actions */}
+              <div className="pt-4 border-t border-white/5 space-y-3">
+                <button className="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-brand/10 border border-brand/20 text-xs font-bold text-brand hover:bg-brand/20 transition-all">
+                  <Sparkles size={16} />
+                  Go Premium
+                </button>
+                
+                <div className="flex items-center gap-3 p-2 group cursor-pointer hover:bg-white/5 rounded-2xl transition-all">
+                  <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center text-white/40 group-hover:bg-brand/20 group-hover:text-brand transition-all font-bold">
+                    {userData?.name ? userData.name[0].toUpperCase() : "J"}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-bold text-white truncate">{userData?.name || "John Doe"}</p>
+                    <p className="text-[10px] text-white/40 truncate">{userData?.email || "john@lumiaxy.study"}</p>
+                  </div>
+                  <MoreVertical size={14} className="text-white/20" />
+                </div>
+              </div>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Messages Area */}
-      <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar bg-dark-950/20">
-        <AnimatePresence initial={false}>
-          {messages.map((message) => (
-            <motion.div
-              key={message.id}
-              initial={{ opacity: 0, y: 10, scale: 0.95 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
-            >
-              <div className={`flex gap-4 max-w-[85%] ${message.role === "user" ? "flex-row-reverse" : ""}`}>
-                <div className={`w-8 h-8 rounded-lg flex-shrink-0 flex items-center justify-center border h-fit mt-1 ${
-                  message.role === "assistant" 
-                  ? "bg-brand/20 border-brand/30 text-brand" 
-                  : "bg-white/5 border-white/10 text-white/40"
-                }`}>
-                  {message.role === "assistant" ? <Bot size={16} /> : <User size={16} />}
+      {/* Main Chat Area */}
+      <div className="flex-1 flex flex-col relative min-w-0 bg-black/20">
+        {/* Toggle Button Outside */}
+        {!isSidebarOpen && (
+          <motion.button 
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            onClick={() => setIsSidebarOpen(true)}
+            className="absolute left-6 top-6 w-12 h-12 rounded-2xl glass border border-white/20 flex items-center justify-center text-white/40 hover:text-brand hover:border-brand/40 transition-all z-50 shadow-2xl backdrop-blur-3xl"
+          >
+            <ChevronRight size={24} />
+          </motion.button>
+        )}
+
+        {/* Messages / Orb Area */}
+        <div className="flex-1 relative overflow-hidden flex flex-col">
+          <AnimatePresence mode="wait">
+            {messages.length === 0 ? (
+              <motion.div 
+                key="welcome"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="absolute inset-0 flex flex-col items-center justify-center p-8 text-center bg-radial-gradient from-brand/5 to-transparent"
+              >
+                <div className="relative mb-12 group">
+                  <div className="absolute inset-0 bg-brand/20 blur-[100px] rounded-full opacity-50 group-hover:opacity-100 transition-opacity" />
+                  <AIOrb state={orbState} size={280} className="relative z-10" />
                 </div>
-                <div className="flex flex-col gap-2">
-                  <div className={`p-4 rounded-2xl text-sm leading-relaxed ${
-                    message.role === "assistant" 
-                    ? "bg-white/[0.03] border border-white/10 text-white/80 rounded-tl-none whitespace-pre-wrap" 
-                    : "bg-brand text-white border border-brand-400/20 rounded-tr-none shadow-[0_10px_30px_rgba(98,114,241,0.3)]"
-                  }`}>
-                    {message.role === "user" && message.image && (
-                      <div className="mb-3 rounded-lg overflow-hidden border border-white/20">
-                        <img src={message.image} alt="User upload" className="max-w-xs h-auto" />
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.2 }}
+                  className="space-y-6"
+                >
+                  <h1 className="text-6xl md:text-8xl font-bold tracking-tighter text-white">
+                    Lumiaxy<span className="gradient-text">.ai</span>
+                  </h1>
+                  <p className="text-lg text-white/40 max-w-xl mx-auto leading-relaxed font-medium">
+                    Experience the future of study with fluid, morphing AI interfaces and personalized learning modules.
+                  </p>
+                </motion.div>
+              </motion.div>
+            ) : (
+              <div 
+                ref={scrollRef}
+                className="flex-1 overflow-y-auto p-6 space-y-8 scroll-smooth scrollbar-hide"
+              >
+                <div className="max-w-4xl mx-auto space-y-10 pb-40 px-4">
+                  {messages.map((msg, i) => (
+                    <motion.div 
+                      key={i}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} items-start gap-4`}
+                    >
+                      {msg.role === 'assistant' && (
+                        <div className="shrink-0 pt-1">
+                          <AIOrb state={orbState} size={40} reactive={false} className="shadow-2xl" />
+                        </div>
+                      )}
+                      <div className={clsx(
+                        "max-w-[80%] px-6 py-4 rounded-3xl text-[15px] leading-relaxed",
+                        msg.role === 'user' 
+                          ? "bg-brand text-white shadow-[0_10px_30px_rgba(98,114,241,0.2)] rounded-tr-none marker:bg-white" 
+                          : "glass-dark border border-white/10 text-white/90 rounded-tl-none shadow-xl"
+                      )}>
+                        {msg.content}
                       </div>
-                    )}
-                    {message.content}
-                    <p className={`text-[10px] mt-2 opacity-40 font-medium ${message.role === "user" ? "text-right" : ""}`}>
-                      {new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                    </p>
+                    </motion.div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </AnimatePresence>
+        </div>
+
+        {/* Input Bar */}
+        <div className="absolute bottom-10 left-0 right-0 px-6 z-40">
+          <div className="max-w-4xl mx-auto relative group">
+            <div className="absolute inset-0 bg-brand/20 blur-[80px] opacity-0 group-focus-within:opacity-100 transition-all duration-500" />
+            
+            <div className="relative glass-dark rounded-[24px] border border-white/10 flex items-center p-3 shadow-2xl transition-all focus-within:border-brand/40 bg-black/60 backdrop-blur-3xl focus-within:ring-1 ring-white/5">
+              <div className="relative group/plus">
+                <button className="p-3 text-white/30 hover:text-white transition-all rounded-xl hover:bg-white/5 active:scale-95 bg-white/5 border border-white/5">
+                  <Plus size={20} />
+                </button>
+                
+                {/* Plus Menu */}
+                <div className="absolute bottom-full left-0 mb-4 opacity-0 scale-95 group-hover/plus:opacity-100 group-hover/plus:scale-100 pointer-events-none group-hover/plus:pointer-events-auto transition-all origin-bottom-left z-50">
+                  <div className="glass rounded-2xl p-2 border border-white/10 shadow-3xl space-y-1 w-52 overflow-hidden bg-dark-900/90 backdrop-blur-2xl">
+                    <button className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/10 text-[12px] text-white/60 hover:text-white transition-all text-left">
+                      <div className="w-8 h-8 rounded-lg bg-brand/20 flex items-center justify-center text-brand"><FileText size={16} /></div>
+                      <span>Document</span>
+                    </button>
+                    <button className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/10 text-[12px] text-white/60 hover:text-white transition-all text-left">
+                      <div className="w-8 h-8 rounded-lg bg-cyan-500/20 flex items-center justify-center text-cyan-500"><ImageIcon size={16} /></div>
+                      <span>Image / Gallery</span>
+                    </button>
+                    <button className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/10 text-[12px] text-white/60 hover:text-white transition-all text-left">
+                      <div className="w-8 h-8 rounded-lg bg-purple-500/20 flex items-center justify-center text-purple-400"><Paperclip size={16} /></div>
+                      <span>URL / Link</span>
+                    </button>
                   </div>
                 </div>
               </div>
-            </motion.div>
-          ))}
-          
-          {isTyping && (
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="flex justify-start"
-            >
-              <div className="flex gap-4 max-w-[80%]">
-                <div className="w-8 h-8 rounded-lg bg-brand/20 border border-brand/30 flex items-center justify-center text-brand">
-                  <Bot size={16} />
-                </div>
-                <div className="bg-white/[0.03] border border-white/10 p-4 rounded-2xl rounded-tl-none flex gap-1">
-                   {[0, 1, 2].map(i => (
-                     <motion.div 
-                        key={i}
-                        animate={{ opacity: [0.3, 1, 0.3] }}
-                        transition={{ duration: 1, repeat: Infinity, delay: i * 0.2 }}
-                        className="w-1.5 h-1.5 rounded-full bg-brand"
-                     />
-                   ))}
-                </div>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-        
-        {error && (
-          <div className="text-center p-4 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs font-medium">
-            {error}
-          </div>
-        )}
-        
-        <div ref={messagesEndRef} />
-      </div>
-
-      {/* Input Area */}
-      <div className="p-6 bg-white/[0.02] border-t border-white/10">
-        {selectedImage && (
-          <div className="mb-4 flex items-center gap-4 p-2 bg-white/5 border border-white/10 rounded-2xl w-fit relative animate-in fade-in slide-in-from-bottom-2">
-            <div className="w-16 h-16 rounded-lg overflow-hidden relative border border-white/10">
-              <img src={selectedImage} alt="Preview" className="w-full h-full object-cover" />
+              
+              <input 
+                type="text" 
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleSend()}
+                placeholder="Message Lumiaxy Assistant..." 
+                className="flex-1 bg-transparent border-none outline-none text-[15px] text-white px-5 placeholder:text-white/20 font-medium"
+              />
+              
+              <button 
+                onClick={handleSend}
+                disabled={!input.trim()}
+                className={clsx(
+                  "w-12 h-12 rounded-xl flex items-center justify-center transition-all active:scale-90",
+                  input.trim() 
+                    ? "bg-brand text-white shadow-[0_0_25px_rgba(98,114,241,0.6)] hover:brightness-110" 
+                    : "bg-white/5 text-white/10 border border-white/5"
+                )}
+              >
+                <Send size={18} />
+              </button>
             </div>
-            <div className="pr-4">
-               <p className="text-[10px] font-bold text-white/60 uppercase tracking-widest">Document Selected</p>
-               <p className="text-[11px] text-white/30">AI Vision will analyze this</p>
-            </div>
-            <button 
-              onClick={() => setSelectedImage(null)}
-              className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-red-500 text-white flex items-center justify-center hover:scale-110 transition-transform shadow-lg"
-            >
-              <X size={14} />
-            </button>
           </div>
-        )}
-
-        <form onSubmit={handleSend} className="relative flex items-center gap-3">
-          <div className="flex-1 relative group">
-            <div className="absolute left-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5 lg:gap-2">
-               <input 
-                type="file" 
-                hidden 
-                ref={fileInputRef} 
-                accept="image/*" 
-                onChange={handleImageFile}
-               />
-               <button 
-                type="button" 
-                onClick={() => fileInputRef.current?.click()}
-                className="p-2 rounded-xl text-white/20 hover:text-brand hover:bg-brand/10 transition-all"
-               >
-                 <Paperclip size={18} />
-               </button>
-               <button 
-                type="button" 
-                onClick={startCamera}
-                className="p-2 rounded-xl text-white/20 hover:text-cyan hover:bg-cyan/10 transition-all"
-               >
-                 <Camera size={18} />
-               </button>
-            </div>
-            <input 
-              type="text" 
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder={selectedImage ? "Add a message about this image..." : "Ask anything (e.g., Explain Newton's Third Law...)"}
-              className="w-full bg-white/[0.04] border border-white/10 rounded-2xl py-4 pl-24 pr-12 text-sm text-white focus:outline-none focus:border-brand/50 focus:ring-1 focus:ring-brand/20 transition-all shadow-inner placeholder:text-white/10"
-            />
-          </div>
-          
-          <button 
-            type="submit"
-            disabled={(!input.trim() && !selectedImage) || isTyping}
-            className="w-14 h-14 rounded-2xl bg-brand text-white flex items-center justify-center transition-all hover:scale-[1.05] active:scale-[0.95] disabled:opacity-50 disabled:scale-100 shadow-[0_10px_25px_rgba(98,114,241,0.4)] group relative overflow-hidden shrink-0"
-          >
-             <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity" />
-             <Send size={22} className="relative z-10 group-hover:-translate-y-1 group-hover:translate-x-1 transition-transform" />
-          </button>
-        </form>
-        <p className="text-[10px] text-center text-white/20 mt-4 font-bold uppercase tracking-widest flex items-center justify-center gap-2">
-           <Sparkles size={12} className="text-brand" />
-           Powered by Fusion AI Engine v2.0
-        </p>
+        </div>
       </div>
     </div>
   );
+}
+
+function clsx(...classes: any[]) {
+  return classes.filter(Boolean).join(" ");
 }

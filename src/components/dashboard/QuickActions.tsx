@@ -31,7 +31,7 @@ const actions = [
     title: "Study Library", 
     desc: "Browse curated notes and guides", 
     icon: Library, 
-    href: "#", 
+    href: "/dashboard/materials", 
     color: "from-emerald-500/20 to-teal-600/20",
     iconColor: "#10b981"
   },
@@ -39,7 +39,7 @@ const actions = [
     title: "Practice Quiz", 
     desc: "Test your knowledge with AI", 
     icon: GraduationCap, 
-    href: "#", 
+    href: "/dashboard/quiz", 
     color: "from-amber-500/20 to-orange-600/20",
     iconColor: "#f59e0b"
   },

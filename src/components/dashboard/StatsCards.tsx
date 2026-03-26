@@ -10,45 +10,61 @@ import {
   TrendingUp
 } from "lucide-react";
 
-const stats = [
-  { 
-    label: "Courses Completed", 
-    value: "12", 
-    trend: "+2 this week", 
-    icon: CheckCircle2, 
-    color: "#10b981",
-    bg: "rgba(16, 185, 129, 0.1)"
-  },
-  { 
-    label: "Study Hours", 
-    value: "42.5h", 
-    trend: "+5.2h from last week", 
-    icon: Clock, 
-    color: "#6272f1",
-    bg: "rgba(98, 114, 241, 0.1)"
-  },
-  { 
-    label: "Learning Streak", 
-    value: "8 Days", 
-    trend: "New Personal Best!", 
-    icon: Flame, 
-    color: "#f59e0b",
-    bg: "rgba(245, 158, 11, 0.1)"
-  },
-  { 
-    label: "AI Explanations", 
-    value: "156", 
-    trend: "Top 5% of Students", 
-    icon: MessageSquare, 
-    color: "#00e5ff",
-    bg: "rgba(0, 229, 255, 0.1)"
-  },
-];
+export type StudentDashboardStats = {
+  coursesCompleted: number;
+  studyHours: number;
+  learningStreakDays: number;
+  aiExplanations: number;
+  trends: {
+    courses: string;
+    hours: string;
+    streak: string;
+    ai: string;
+  };
+};
 
-export default function StatsCards() {
+type Props = {
+  stats: StudentDashboardStats;
+  loading?: boolean;
+};
+
+export default function StatsCards({ stats, loading }: Props) {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-      {stats.map((stat, i) => (
+      {[
+        {
+          label: "Courses Completed",
+          value: String(stats.coursesCompleted),
+          trend: stats.trends.courses,
+          icon: CheckCircle2,
+          color: "#10b981",
+          bg: "rgba(16, 185, 129, 0.1)",
+        },
+        {
+          label: "Study Hours (est.)",
+          value: `${stats.studyHours}h`,
+          trend: stats.trends.hours,
+          icon: Clock,
+          color: "#ff7200",
+          bg: "rgba(255, 114, 0, 0.1)",
+        },
+        {
+          label: "Learning Streak",
+          value: `${stats.learningStreakDays} Days`,
+          trend: stats.trends.streak,
+          icon: Flame,
+          color: "#f59e0b",
+          bg: "rgba(245, 158, 11, 0.1)",
+        },
+        {
+          label: "AI Explanations",
+          value: String(stats.aiExplanations),
+          trend: stats.trends.ai,
+          icon: MessageSquare,
+          color: "#00e5ff",
+          bg: "rgba(0, 229, 255, 0.1)",
+        },
+      ].map((stat, i) => (
         <motion.div
           key={stat.label}
           initial={{ opacity: 0, y: 20 }}
@@ -73,7 +89,9 @@ export default function StatsCards() {
           </div>
           
           <div className="space-y-1">
-            <h3 className="text-2xl font-bold text-white tracking-tight">{stat.value}</h3>
+            <h3 className="text-2xl font-bold text-white tracking-tight">
+              {loading ? <span className="inline-block w-12 h-6 bg-white/10 rounded animate-pulse" /> : stat.value}
+            </h3>
             <p className="text-xs font-medium text-white/40">{stat.label}</p>
           </div>
           

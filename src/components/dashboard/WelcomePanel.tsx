@@ -2,9 +2,15 @@
 
 import { motion } from "framer-motion";
 import { Sparkles, ArrowRight, Play } from "lucide-react";
-import Image from "next/image";
+import AIOrb from "../ai-orb/AIOrb";
 
-export default function WelcomePanel() {
+export default function WelcomePanel({
+  userName,
+  weeklyProgressPct,
+}: {
+  userName: string;
+  weeklyProgressPct: number;
+}) {
   const currentHour = new Date().getHours();
   const greeting = currentHour < 12 ? "Good morning" : currentHour < 18 ? "Good afternoon" : "Good evening";
 
@@ -31,17 +37,17 @@ export default function WelcomePanel() {
           </motion.div>
           
           <h1 className="text-3xl md:text-4xl font-bold text-white mb-3">
-            {greeting}, <span className="gradient-text">John!</span> 👋
+            {greeting}, <span className="gradient-text">{userName}!</span> 👋
           </h1>
           <p className="text-white/50 text-base max-w-lg mb-6 leading-relaxed">
-            You've completed **85%** of your weekly study goals. Keep up the momentum and reach your targets with Lumiaxy.ai!
+            You've completed <span className="text-white font-bold">{weeklyProgressPct}%</span> of your weekly study days. Keep it up with Lumiaxy.ai!
           </p>
           
           <div className="flex flex-col sm:flex-row items-center gap-4">
             <button className="group relative flex items-center gap-2 px-6 py-3 rounded-2xl bg-brand text-white text-sm font-bold transition-all hover:scale-[1.02] active:scale-[0.98] overflow-hidden whitespace-nowrap">
                <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity" />
                <Play size={16} fill="white" />
-               Continue Biology Prep
+               Continue your next session
                <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
             </button>
             <button className="px-6 py-3 rounded-2xl border border-white/10 text-white/60 hover:text-white hover:bg-white/5 text-sm font-bold transition-all whitespace-nowrap">
@@ -63,13 +69,7 @@ export default function WelcomePanel() {
             }}
             className="w-48 h-48 md:w-56 md:h-56 relative group"
           >
-            <Image 
-               src="/fusion-orb.png" 
-               alt="AI Assistant" 
-               width={240} 
-               height={240} 
-               className="animate-swirl drop-shadow-[0_0_30px_rgba(98,114,241,0.3)] transition-all duration-700 group-hover:scale-110"
-            />
+            <AIOrb size={240} state="idle" reactive={false} className="drop-shadow-[0_0_30px_rgba(98,114,241,0.3)] transition-all duration-700 group-hover:scale-110" />
             {/* Floating badges */}
             <motion.div 
               animate={{ y: [0, 5, 0] }}
