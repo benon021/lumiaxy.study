@@ -17,7 +17,8 @@ export async function POST(req: Request) {
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    const userRole = role === "TEACHER" ? "TEACHER" : role === "ADMIN" ? "ADMIN" : "STUDENT";
+    // Strictly enforce stagnant admin. No admin can be created via signup.
+    const userRole = role === "TEACHER" ? "TEACHER" : "STUDENT";
 
     const user = await prisma.user.create({
       data: {

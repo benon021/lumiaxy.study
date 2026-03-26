@@ -10,6 +10,10 @@ export default async function DashboardPage() {
     redirect("/login");
   }
 
+  if (user.role === "ADMIN") {
+    redirect("/admin/dashboard");
+  }
+
   if (user.role === "TEACHER") {
     return <TeacherHome user={user} />;
   }

@@ -2,25 +2,12 @@
 
 import { useState, useRef, useEffect } from "react";
 import { 
-  Send, 
-  Plus, 
-  Sparkles, 
-  MessageSquare, 
-  History, 
-  Bookmark, 
-  ChevronLeft, 
-  ChevronRight,
-  LogOut,
-  User,
-  Settings,
-  MoreVertical,
-  Paperclip,
-  Image as ImageIcon,
-  FileText
+  Send, Plus, Sparkles, MessageSquare, History, Bookmark, 
+  ChevronLeft, ChevronRight, MoreVertical, Paperclip, 
+  Image as ImageIcon, FileText, Zap, Cpu, Activity
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import AIOrb, { AIOrbState } from "@/components/ai-orb/AIOrb";
-import Image from "next/image";
 
 interface Message {
   role: 'user' | 'assistant';
@@ -32,14 +19,7 @@ interface UserData {
   email: string;
 }
 
-const AI_HISTORY_KEY = "lumiaxy_ai_history_v1";
-
-type AiLocalMessage = {
-  id: string;
-  createdAt: string; // ISO
-  userText: string;
-  assistantText: string;
-};
+const AI_HISTORY_KEY = "lumiaxy_ai_history_v2";
 
 export default function AIChat() {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -50,26 +30,17 @@ export default function AIChat() {
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // Fetch user data
-    const fetchUser = async () => {
-      try {
-        const res = await fetch("/api/auth/me");
-        if (res.ok) {
-          const data = await res.json();
-          setUserData(data.user);
-        }
-      } catch (err) {
-        console.error("Failed to fetch user:", err);
-      }
-    };
-    fetchUser();
+    fetch("/api/auth/me")
+      .then(res => res.json())
+      .then(data => { if (data.user) setUserData(data.user); })
+      .catch(() => {});
   }, []);
 
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  }, [messages]);
+  }, [messages, orbState]);
 
   const handleSend = async () => {
     if (!input.trim()) return;
@@ -79,20 +50,17 @@ export default function AIChat() {
     setOrbState("thinking");
 
     const userPart = { role: "user" as const, content: userMessage };
-    const nextMessages = [...messages, userPart];
-    setMessages(nextMessages);
+    setMessages(prev => [...prev, userPart]);
 
     try {
       const res = await fetch("/api/ai", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: nextMessages }),
+        body: JSON.stringify({ messages: [...messages, userPart] }),
       });
 
       const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data?.error || "Failed to get AI response");
-      }
+      if (!res.ok) throw new Error(data?.error || "Failed...");
 
       const assistantPart = {
         role: "assistant" as const,
@@ -100,119 +68,93 @@ export default function AIChat() {
       };
 
       setOrbState("speaking");
-      setMessages((prev) => [...prev, assistantPart]);
-
-      const localItem: AiLocalMessage = {
-        id: `${Date.now()}_${Math.random().toString(16).slice(2)}`,
-        createdAt: new Date().toISOString(),
-        userText: userMessage,
-        assistantText: assistantPart.content,
-      };
-
-      try {
-        const storedRaw = localStorage.getItem(AI_HISTORY_KEY);
-        const stored = storedRaw ? (JSON.parse(storedRaw) as AiLocalMessage[]) : [];
-        const next = Array.isArray(stored) ? [...stored, localItem].slice(-300) : [localItem];
-        localStorage.setItem(AI_HISTORY_KEY, JSON.stringify(next));
-      } catch {
-        // Ignore localStorage failures (private mode, etc.)
-      }
+      setMessages(prev => [...prev, assistantPart]);
 
       setTimeout(() => setOrbState("idle"), 1200);
     } catch (err: any) {
-      const assistantPart = {
-        role: "assistant" as const,
-        content: err?.message || "AI request failed. Please try again.",
-      };
-      setMessages((prev) => [...prev, assistantPart]);
+      setMessages(prev => [...prev, { role: "assistant", content: err.message || "Connection to Shard failed." }]);
       setOrbState("idle");
     }
   };
 
-  const recentSessions = [
-    "Quantum Physics Intro",
-    "Biology Mock Test Prep",
-    "Calc Home Assignment",
-    "History Summary Prep"
-  ];
-
   return (
-    <div className="flex absolute inset-0 pt-20 lg:pt-0 overflow-hidden">
-      {/* Sidebar */}
+    <div className="flex absolute inset-0 pt-20 lg:pt-0 overflow-hidden bg-dark-950 font-sans selection:bg-brand/30 selection:text-white">
+      {/* Dynamic Background */}
+      <div className="absolute inset-0 pointer-events-none z-0">
+        <div className="absolute top-1/4 left-1/4 w-[800px] h-[800px] bg-brand/5 rounded-full blur-[150px] mix-blend-screen" />
+        <div className="absolute bottom-1/4 right-1/4 w-[600px] h-[600px] bg-cyan/5 rounded-full blur-[120px] mix-blend-screen" />
+        <div className="absolute inset-0 bg-[url('/grid.svg')] bg-center [mask-image:linear-gradient(180deg,white,rgba(255,255,255,0))] opacity-5" />
+      </div>
+
+      {/* Futuristic Sidebar */}
       <AnimatePresence mode="wait">
         {isSidebarOpen && (
           <motion.div 
-            initial={{ width: 0, opacity: 0 }}
-            animate={{ width: 280, opacity: 1 }}
-            exit={{ width: 0, opacity: 0 }}
-            transition={{ type: "spring", stiffness: 300, damping: 30 }}
-            className="h-full bg-dark-950/40 backdrop-blur-xl border-r border-white/5 flex flex-col relative z-30"
+            initial={{ width: 0, opacity: 0, x: -50 }}
+            animate={{ width: 300, opacity: 1, x: 0 }}
+            exit={{ width: 0, opacity: 0, x: -50 }}
+            transition={{ type: "spring", stiffness: 250, damping: 25 }}
+            className="h-full bg-black/40 backdrop-blur-2xl border-r border-white/5 flex flex-col relative z-30 shadow-[4px_0_24px_rgba(0,0,0,0.5)]"
           >
-            <div className="p-4 flex flex-col h-full w-[280px]">
-              {/* Sidebar Header */}
-              <div className="flex items-center justify-between mb-8 px-2">
-                 <h2 className="text-lg font-bold text-white tracking-tight flex items-center gap-2">
-                    Lumiaxy<span className="gradient-text">.ai</span>
-                 </h2>
-                 <button 
-                  onClick={() => setIsSidebarOpen(false)}
-                  className="p-2 glass rounded-lg text-white/40 hover:text-white transition-all"
-                >
-                  <ChevronLeft size={16} />
-                </button>
+            <div className="p-5 flex flex-col h-full w-[300px]">
+              
+              <div className="flex items-center justify-between mb-8">
+                 <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-xl bg-brand/20 border border-brand/40 flex items-center justify-center">
+                       <Sparkles size={16} className="text-brand" />
+                    </div>
+                    <h2 className="text-xl font-bold text-white tracking-tight">
+                       Lumiaxy<span className="text-brand">.ai</span>
+                    </h2>
+                 </div>
+                 <button onClick={() => setIsSidebarOpen(false)} className="p-2 glass rounded-xl text-white/40 hover:text-white hover:bg-white/10 transition-all">
+                  <ChevronLeft size={18} />
+                 </button>
               </div>
 
-              {/* New Chat Button */}
-              <button className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-white/5 border border-white/10 text-sm font-bold text-white hover:bg-white/10 transition-all mb-8 w-full group">
-                <Plus size={18} className="text-brand group-hover:rotate-90 transition-transform" />
-                New Session
+              <button className="flex items-center justify-center gap-3 px-4 py-3.5 rounded-2xl bg-gradient-to-r from-brand/80 to-brand hover:from-brand hover:to-brand/80 shadow-[0_0_20px_rgba(98,114,241,0.3)] text-sm font-bold text-white transition-all transform hover:scale-[1.02] active:scale-[0.98] mb-8 group">
+                <Plus size={18} className="group-hover:rotate-90 transition-transform" />
+                Initialize New Core
               </button>
 
-              {/* Recent Sessions */}
-              <div className="flex-1 overflow-y-auto space-y-6 scrollbar-hide">
-                 <div className="space-y-4">
-                    <div className="flex items-center justify-between px-2">
-                      <h3 className="text-[10px] font-bold text-white/20 uppercase tracking-widest flex items-center gap-2">
-                        <History size={12} />
-                        Recent Sessions
+              <div className="flex-1 overflow-y-auto space-y-8 scrollbar-hide pr-2">
+                 <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-[10px] font-bold text-white/30 uppercase tracking-[0.2em] flex items-center gap-2">
+                        <Activity size={12} className="text-cyan-500" />
+                        Active Matrices
                       </h3>
-                      <button className="text-[10px] font-bold text-white/20 hover:text-white transition-colors">See All</button>
                     </div>
                     <div className="space-y-1">
-                      {recentSessions.map((session, i) => (
-                        <button key={i} className="w-full text-left px-4 py-3 rounded-xl hover:bg-white/5 text-xs text-white/40 hover:text-white transition-all group flex items-center gap-3">
-                          <MessageSquare size={14} className="opacity-0 group-hover:opacity-100 text-brand" />
-                          <span className="truncate">{session}</span>
+                      {["Advanced Vector Calculus", "Quantum Entanglement", "Roman Empire Synthesis"].map((s, i) => (
+                        <button key={i} className="w-full text-left px-4 py-3 rounded-xl hover:bg-white/5 text-xs text-white/60 hover:text-white transition-all group flex items-start gap-3 border border-transparent hover:border-white/5">
+                          <MessageSquare size={14} className="mt-0.5 text-white/20 group-hover:text-brand transition-colors" />
+                          <span className="truncate leading-relaxed">{s}</span>
                         </button>
                       ))}
                     </div>
                  </div>
 
-                 <div className="space-y-4">
-                    <h3 className="text-[10px] font-bold text-white/20 uppercase tracking-widest flex items-center gap-2 px-2">
-                      <Bookmark size={12} />
-                      Saved
+                 <div className="space-y-3">
+                    <h3 className="text-[10px] font-bold text-white/30 uppercase tracking-[0.2em] flex items-center gap-2">
+                      <Bookmark size={12} className="text-purple-500" />
+                      Archived Nodes
                     </h3>
-                    <p className="px-4 text-[11px] text-white/20 italic">No saved explanations yet.</p>
+                    <p className="px-4 text-[11px] text-white/20 italic font-mono">Archive Empty []</p>
                  </div>
               </div>
 
-              {/* User Profile / Bottom Actions */}
-              <div className="pt-4 border-t border-white/5 space-y-3">
-                <button className="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-brand/10 border border-brand/20 text-xs font-bold text-brand hover:bg-brand/20 transition-all">
-                  <Sparkles size={16} />
-                  Go Premium
-                </button>
-                
-                <div className="flex items-center gap-3 p-2 group cursor-pointer hover:bg-white/5 rounded-2xl transition-all">
-                  <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center text-white/40 group-hover:bg-brand/20 group-hover:text-brand transition-all font-bold">
-                    {userData?.name ? userData.name[0].toUpperCase() : "J"}
+              {/* Profile Bar */}
+              <div className="pt-5 mt-5 border-t border-white/10">
+                <div className="glass rounded-2xl p-3 flex items-center gap-3 group cursor-pointer hover:border-brand/30 transition-all">
+                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-brand/20 to-brand/5 border border-brand/20 flex items-center justify-center text-brand font-bold text-lg shadow-[inset_0_0_12px_rgba(98,114,241,0.2)]">
+                    {userData?.name ? userData.name[0].toUpperCase() : "U"}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs font-bold text-white truncate">{userData?.name || "John Doe"}</p>
-                    <p className="text-[10px] text-white/40 truncate">{userData?.email || "john@lumiaxy.study"}</p>
+                    <p className="text-xs font-bold text-white truncate group-hover:text-brand transition-colors">{userData?.name || "Neural Operator"}</p>
+                    <p className="text-[10px] text-white/40 truncate font-mono">{userData?.email || "sys.op@lumiaxy"}</p>
                   </div>
-                  <MoreVertical size={14} className="text-white/20" />
+                  <MoreVertical size={14} className="text-white/20 group-hover:text-white transition-colors" />
                 </div>
               </div>
             </div>
@@ -220,111 +162,101 @@ export default function AIChat() {
         )}
       </AnimatePresence>
 
-      {/* Main Chat Area */}
-      <div className="flex-1 flex flex-col relative min-w-0 bg-black/20">
-        {/* Toggle Button Outside */}
+      {/* Main Interface */}
+      <div className="flex-1 flex flex-col relative min-w-0 z-10">
         {!isSidebarOpen && (
           <motion.button 
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
             onClick={() => setIsSidebarOpen(true)}
-            className="absolute left-6 top-6 w-12 h-12 rounded-2xl glass border border-white/20 flex items-center justify-center text-white/40 hover:text-brand hover:border-brand/40 transition-all z-50 shadow-2xl backdrop-blur-3xl"
+            className="absolute left-6 top-6 w-12 h-12 rounded-2xl glass border border-white/10 flex items-center justify-center text-white/40 hover:text-brand hover:border-brand/40 transition-all z-50 shadow-2xl backdrop-blur-3xl hover:shadow-[0_0_20px_rgba(98,114,241,0.2)]"
           >
             <ChevronRight size={24} />
           </motion.button>
         )}
 
-        {/* Messages / Orb Area */}
         <div className="flex-1 relative overflow-hidden flex flex-col">
           <AnimatePresence mode="wait">
             {messages.length === 0 ? (
               <motion.div 
                 key="welcome"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="absolute inset-0 flex flex-col items-center justify-center p-8 text-center bg-radial-gradient from-brand/5 to-transparent"
+                initial={{ opacity: 0, filter: "blur(10px)" }}
+                animate={{ opacity: 1, filter: "blur(0px)" }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                transition={{ duration: 0.5 }}
+                className="absolute inset-0 flex flex-col items-center justify-center p-8 text-center"
               >
-                <div className="relative mb-12 group">
-                  <div className="absolute inset-0 bg-brand/20 blur-[100px] rounded-full opacity-50 group-hover:opacity-100 transition-opacity" />
-                  <AIOrb state={orbState} size={280} className="relative z-10" />
+                <div className="relative mb-16">
+                  <div className="absolute inset-0 bg-brand/30 blur-[120px] rounded-full opacity-60 mix-blend-screen animate-pulse" />
+                  <AIOrb state={orbState} size={320} className="relative z-10 drop-shadow-[0_0_50px_rgba(98,114,241,0.5)]" />
                 </div>
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.2 }}
-                  className="space-y-6"
-                >
-                  <h1 className="text-6xl md:text-8xl font-bold tracking-tighter text-white">
-                    Lumiaxy<span className="gradient-text">.ai</span>
+                <div className="space-y-6 max-w-2xl relative z-20">
+                  <h1 className="text-5xl md:text-7xl font-bold tracking-tighter text-transparent bg-clip-text bg-gradient-to-br from-white via-white/80 to-white/20">
+                     Nexus <span className="text-brand drop-shadow-[0_0_15px_rgba(98,114,241,0.5)]">Awakened</span>
                   </h1>
-                  <p className="text-lg text-white/40 max-w-xl mx-auto leading-relaxed font-medium">
-                    Experience the future of study with fluid, morphing AI interfaces and personalized learning modules.
+                  <p className="text-lg text-white/50 leading-relaxed font-medium">
+                     I am Fusion AI. Provide structural data, upload schematics, or query the collective intelligence to begin synthesis.
                   </p>
-                </motion.div>
+                </div>
               </motion.div>
             ) : (
-              <div 
-                ref={scrollRef}
-                className="flex-1 overflow-y-auto p-6 space-y-8 scroll-smooth scrollbar-hide"
-              >
-                <div className="max-w-4xl mx-auto space-y-10 pb-40 px-4">
+              <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 md:p-8 space-y-8 scroll-smooth scrollbar-hide">
+                <div className="max-w-4xl mx-auto space-y-12 pb-40">
                   {messages.map((msg, i) => (
                     <motion.div 
                       key={i}
-                      initial={{ opacity: 0, y: 10 }}
+                      initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
-                      className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} items-start gap-4`}
+                      className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} items-start gap-4 md:gap-6`}
                     >
                       {msg.role === 'assistant' && (
-                        <div className="shrink-0 pt-1">
-                          <AIOrb state={orbState} size={40} reactive={false} className="shadow-2xl" />
+                        <div className="shrink-0 pt-2 hidden md:block">
+                          <AIOrb state="idle" size={48} reactive={false} className="shadow-[0_0_20px_rgba(98,114,241,0.3)] border border-brand/20 rounded-full" />
                         </div>
                       )}
-                      <div className={clsx(
-                        "max-w-[80%] px-6 py-4 rounded-3xl text-[15px] leading-relaxed",
-                        msg.role === 'user' 
-                          ? "bg-brand text-white shadow-[0_10px_30px_rgba(98,114,241,0.2)] rounded-tr-none marker:bg-white" 
-                          : "glass-dark border border-white/10 text-white/90 rounded-tl-none shadow-xl"
-                      )}>
-                        {msg.content}
+                      <div className={`relative group max-w-[85%] md:max-w-[75%]`}>
+                        <div className={`
+                          relative z-10 px-6 py-4 md:py-5 text-[15px] leading-[1.7] whitespace-pre-wrap
+                          ${msg.role === 'user' 
+                            ? "bg-gradient-to-br from-brand to-brand/80 text-white rounded-[24px] rounded-tr-sm shadow-[0_10px_40px_rgba(98,114,241,0.3)] border border-white/10" 
+                            : "glass-dark border border-white/10 text-white/90 rounded-[24px] rounded-tl-sm shadow-xl bg-black/40 backdrop-blur-md"
+                          }
+                        `}>
+                          {msg.content}
+                        </div>
                       </div>
                     </motion.div>
                   ))}
+                  
+                  {orbState === "thinking" && (
+                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex justify-start items-start gap-6">
+                      <div className="shrink-0 pt-2 hidden md:block"><AIOrb state="thinking" size={48} reactive={false} /></div>
+                      <div className="glass-dark border border-white/10 rounded-[24px] rounded-tl-sm px-6 py-5 flex items-center gap-3 opacity-70">
+                         <div className="flex gap-1.5">
+                            <motion.div animate={{y:[0,-5,0]}} transition={{repeat:Infinity, duration:0.6}} className="w-2 h-2 rounded-full bg-brand" />
+                            <motion.div animate={{y:[0,-5,0]}} transition={{repeat:Infinity, duration:0.6, delay:0.2}} className="w-2 h-2 rounded-full bg-brand" />
+                            <motion.div animate={{y:[0,-5,0]}} transition={{repeat:Infinity, duration:0.6, delay:0.4}} className="w-2 h-2 rounded-full bg-brand" />
+                         </div>
+                         <span className="text-xs font-mono text-brand uppercase tracking-widest px-2">Processing Vectors</span>
+                      </div>
+                    </motion.div>
+                  )}
                 </div>
               </div>
             )}
           </AnimatePresence>
         </div>
 
-        {/* Input Bar */}
-        <div className="absolute bottom-10 left-0 right-0 px-6 z-40">
-          <div className="max-w-4xl mx-auto relative group">
-            <div className="absolute inset-0 bg-brand/20 blur-[80px] opacity-0 group-focus-within:opacity-100 transition-all duration-500" />
+        {/* Input Console */}
+        <div className="absolute bottom-8 left-0 right-0 px-4 md:px-8 z-40 block">
+          <div className="max-w-4xl mx-auto relative">
+            <div className="absolute inset-0 bg-brand/10 blur-[60px] opacity-0 focus-within:opacity-100 transition-opacity duration-700" />
             
-            <div className="relative glass-dark rounded-[24px] border border-white/10 flex items-center p-3 shadow-2xl transition-all focus-within:border-brand/40 bg-black/60 backdrop-blur-3xl focus-within:ring-1 ring-white/5">
-              <div className="relative group/plus">
-                <button className="p-3 text-white/30 hover:text-white transition-all rounded-xl hover:bg-white/5 active:scale-95 bg-white/5 border border-white/5">
-                  <Plus size={20} />
+            <div className="relative glass rounded-[32px] border border-white/10 flex items-center p-2 shadow-[0_20px_50px_rgba(0,0,0,0.5)] transition-all bg-dark-900/80 backdrop-blur-3xl focus-within:border-brand/50 focus-within:ring-2 focus-within:ring-brand/20">
+              <div className="relative group/plus shrink-0">
+                <button className="w-12 h-12 flex items-center justify-center text-white/30 hover:text-white transition-all rounded-2xl hover:bg-white/5 active:scale-95 ml-1">
+                  <Plus size={22} />
                 </button>
-                
-                {/* Plus Menu */}
-                <div className="absolute bottom-full left-0 mb-4 opacity-0 scale-95 group-hover/plus:opacity-100 group-hover/plus:scale-100 pointer-events-none group-hover/plus:pointer-events-auto transition-all origin-bottom-left z-50">
-                  <div className="glass rounded-2xl p-2 border border-white/10 shadow-3xl space-y-1 w-52 overflow-hidden bg-dark-900/90 backdrop-blur-2xl">
-                    <button className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/10 text-[12px] text-white/60 hover:text-white transition-all text-left">
-                      <div className="w-8 h-8 rounded-lg bg-brand/20 flex items-center justify-center text-brand"><FileText size={16} /></div>
-                      <span>Document</span>
-                    </button>
-                    <button className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/10 text-[12px] text-white/60 hover:text-white transition-all text-left">
-                      <div className="w-8 h-8 rounded-lg bg-cyan-500/20 flex items-center justify-center text-cyan-500"><ImageIcon size={16} /></div>
-                      <span>Image / Gallery</span>
-                    </button>
-                    <button className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/10 text-[12px] text-white/60 hover:text-white transition-all text-left">
-                      <div className="w-8 h-8 rounded-lg bg-purple-500/20 flex items-center justify-center text-purple-400"><Paperclip size={16} /></div>
-                      <span>URL / Link</span>
-                    </button>
-                  </div>
-                </div>
               </div>
               
               <input 
@@ -332,30 +264,31 @@ export default function AIChat() {
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleSend()}
-                placeholder="Message Lumiaxy Assistant..." 
-                className="flex-1 bg-transparent border-none outline-none text-[15px] text-white px-5 placeholder:text-white/20 font-medium"
+                placeholder="Initialize prompt sequence..." 
+                className="flex-1 bg-transparent border-none outline-none text-[15px] text-white px-4 placeholder:text-white/30 font-medium font-sans h-12"
               />
               
               <button 
                 onClick={handleSend}
                 disabled={!input.trim()}
-                className={clsx(
-                  "w-12 h-12 rounded-xl flex items-center justify-center transition-all active:scale-90",
-                  input.trim() 
-                    ? "bg-brand text-white shadow-[0_0_25px_rgba(98,114,241,0.6)] hover:brightness-110" 
+                className={`
+                  w-12 h-12 rounded-2xl flex items-center justify-center transition-all shrink-0 mr-1
+                  ${input.trim() 
+                    ? "bg-brand text-white shadow-[0_0_20px_rgba(98,114,241,0.5)] hover:bg-brand/90 hover:scale-105 active:scale-95" 
                     : "bg-white/5 text-white/10 border border-white/5"
-                )}
+                  }
+                `}
               >
-                <Send size={18} />
+                <Cpu size={20} className={input.trim() ? "animate-pulse" : ""} />
               </button>
+            </div>
+            
+            <div className="text-center mt-3">
+               <p className="text-[10px] text-white/30 font-mono tracking-widest uppercase">Fusion Engine v2.0 • Data is encrypted via Shard Protocol</p>
             </div>
           </div>
         </div>
       </div>
     </div>
   );
-}
-
-function clsx(...classes: any[]) {
-  return classes.filter(Boolean).join(" ");
 }
