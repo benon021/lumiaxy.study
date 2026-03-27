@@ -1,70 +1,102 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/db";
+import { getUserFromRequest } from "@/lib/auth";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
 export async function POST(req: Request) {
   try {
-    const { messages, image } = await req.json();
+    const { messages, image, conversationId } = await req.json();
+    const user = await getUserFromRequest(req);
 
-    // 1. Get API Key from DB or .env
+    // 1. Get API Key
     const dbSetting = await (prisma as any).setting.findUnique({
-      where: { key: "OPENAI_API_KEY" }
+      where: { key: "GEMINI_API_KEY" }
     });
     
-    const apiKey = dbSetting?.value || process.env.OPENAI_API_KEY;
+    const apiKey = dbSetting?.value || process.env.GEMINI_API_KEY;
 
-    if (!apiKey) {
+    if (!apiKey || apiKey === "YOUR_GEMINI_API_KEY_HERE") {
       return NextResponse.json(
-        { error: "OpenAI API Key not configured. Please contact the administrator." },
+        { error: "Gemini API Key not configured. Please contact the administrator." },
         { status: 500 }
       );
     }
 
-    // 2. Prepare payload for OpenAI
-    // Formulate the dynamic prompt for the vision model if an image is provided
-    let apiMessages = [...messages];
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+
+    // 2. Format history for Gemini
+    // Gemini expects an array of { role: "user" | "model", parts: [{ text: string }] }
+    const history = messages.slice(0, -1).map((msg: any) => ({
+      role: msg.role === "assistant" ? "model" : "user",
+      parts: [{ text: msg.content }],
+    }));
+
+    const lastMessage = messages[messages.length - 1];
     
-    // If there's an image, the last user message should include it
-    if (image && apiMessages.length > 0) {
-      const lastMessage = apiMessages[apiMessages.length - 1];
-      if (lastMessage.role === "user") {
-        lastMessage.content = [
-          { type: "text", text: lastMessage.content },
-          {
-            type: "image_url",
-            image_url: {
-              url: image, // base64 string
-            },
+    // 3. Handle image if present
+    let result;
+    if (image) {
+      // For multimodal, we don't use chat history in the same way with the simple SDK
+      const imageData = image.split(",")[1];
+      result = await model.generateContent([
+        lastMessage.content,
+        {
+          inlineData: {
+            data: imageData,
+            mimeType: "image/jpeg", // Assuming jpeg for simplicity, should be dynamic
           },
-        ];
-      }
+        },
+      ]);
+    } else {
+      const chat = model.startChat({ history });
+      result = await chat.sendMessage(lastMessage.content);
     }
 
-    const response = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        model: image ? "gpt-4o" : "gpt-4o-mini", // Use gpt-4o for vision
-        messages: apiMessages,
-        max_tokens: 1000,
-      }),
-    });
+    const responseText = result.response.text();
 
-    const data = await response.json();
+    // 4. Save to DB if conversationId is provided
+    if (user && conversationId) {
+      // Save user message
+      await (prisma as any).aIMessage.create({
+        data: {
+          content: lastMessage.content,
+          role: "user",
+          conversationId,
+        },
+      });
 
-    if (!response.ok) {
-        console.error("OpenAI API error:", data);
-        return NextResponse.json(
-            { error: data.error?.message || "Failed to get response from AI" },
-            { status: response.status }
-        );
+      // Save assistant message
+      await (prisma as any).aIMessage.create({
+        data: {
+          content: responseText,
+          role: "assistant",
+          conversationId,
+        },
+      });
+
+      // Update conversation title if it's the first message and still "New Chat"
+      const conversation = await (prisma as any).aIConversation.findUnique({
+        where: { id: conversationId },
+      });
+
+      if (conversation && conversation.title === "New Chat") {
+        const title = lastMessage.content.substring(0, 30) + (lastMessage.content.length > 30 ? "..." : "");
+        await (prisma as any).aIConversation.update({
+          where: { id: conversationId },
+          data: { title, updatedAt: new Date() },
+        });
+      } else {
+        await (prisma as any).aIConversation.update({
+          where: { id: conversationId },
+          data: { updatedAt: new Date() },
+        });
+      }
     }
 
     return NextResponse.json({
       role: "assistant",
-      content: data.choices[0].message.content,
+      content: responseText,
     });
   } catch (error) {
     console.error("AI API Error:", error);

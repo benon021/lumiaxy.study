@@ -30,7 +30,8 @@ export async function getSession(token?: string) {
   }
 
   try {
-    const session = cookies().get("session")?.value;
+    const cookieStore = await cookies();
+    const session = cookieStore.get("session")?.value;
     if (!session) return null;
     return await decrypt(session);
   } catch (error) {
@@ -42,7 +43,8 @@ export async function setSession(userId: string, role: string) {
   const expires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 1 day
   const session = await encrypt({ id: userId, role, expires });
 
-  cookies().set("session", session, {
+  const cookieStore = await cookies();
+  cookieStore.set("session", session, {
     expires,
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
@@ -51,8 +53,9 @@ export async function setSession(userId: string, role: string) {
   });
 }
 
-export function clearSession() {
-  cookies().set("session", "", {
+export async function clearSession() {
+  const cookieStore = await cookies();
+  cookieStore.set("session", "", {
     expires: new Date(0),
     path: "/",
   });
@@ -64,7 +67,8 @@ export function clearSession() {
  */
 export async function getUserFromRequest(_req?: Request) {
   try {
-    const session = cookies().get("session")?.value;
+    const cookieStore = await cookies();
+    const session = cookieStore.get("session")?.value;
     if (!session) return null;
     const payload = await decrypt(session);
     if (!payload?.id) return null;

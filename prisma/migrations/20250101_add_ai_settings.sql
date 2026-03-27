@@ -1,0 +1,2 @@
+-- Add AI settings to existing Setting model (no migration needed, just push)
+-- Key settings will be inserted via API

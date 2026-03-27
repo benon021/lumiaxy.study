@@ -23,7 +23,7 @@ export default function DashboardLayout({
       <StudentSidebar />
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-h-screen relative z-10 lg:pl-[72px] pb-[88px] lg:pb-0">
+      <div className="flex-1 flex flex-col min-h-screen relative z-10 pb-24 sm:pb-[88px]">
         <StudentTopbar />
         
         <main className="flex-1 w-full relative z-0">

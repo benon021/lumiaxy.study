@@ -39,6 +39,7 @@ export async function POST(req: Request) {
     }
 
     const { key, value } = await req.json();
+    console.log('Admin saving setting:', key);
 
     if (!key || !value) {
       return NextResponse.json({ error: "Missing fields" }, { status: 400 });
