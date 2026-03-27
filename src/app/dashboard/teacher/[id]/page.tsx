@@ -86,63 +86,77 @@ export default function TeacherProfilePage() {
   const status = data.teacherProfile?.status || "ONLINE";
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8 pb-32 px-2">
+    <div className="max-w-5xl mx-auto space-y-8 pb-32 px-4 lg:px-0">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="glass rounded-[40px] p-8 border border-white/10 overflow-hidden relative"
+        className="glass rounded-[48px] border border-white/10 overflow-hidden relative group"
       >
-        <div className="absolute top-0 right-0 w-64 h-64 bg-brand/5 rounded-full blur-[80px]" />
-        <div className="relative z-10 flex flex-col md:flex-row md:items-start justify-between gap-6">
-          <div className="flex items-start gap-5 min-w-0">
-            <div className="w-16 h-16 rounded-[32px] bg-brand/20 border border-brand/30 flex items-center justify-center text-brand font-bold text-2xl shrink-0">
-              {(data.name || "T").slice(0, 1).toUpperCase()}
-            </div>
-            <div className="min-w-0">
-              <h1 className="text-3xl font-bold text-white tracking-tight truncate">{data.name}</h1>
-              <div className="flex flex-wrap items-center gap-3 mt-2 text-xs text-white/40 font-bold">
-                <span className="inline-flex items-center gap-2">
-                  <Star size={14} className="text-yellow-400" />
-                  {data.avgRating.toFixed(1)} ({data.totalRatings})
-                </span>
-                <span>{status}</span>
+        {/* Cover Image */}
+        <div className="h-48 sm:h-64 w-full bg-gradient-to-br from-brand/20 to-purple-600/10 relative">
+           {(data as any).coverUrl && (
+             <img src={(data as any).coverUrl} alt="Cover" className="w-full h-full object-cover" />
+           )}
+           <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+        </div>
+
+        <div className="relative z-10 flex flex-col md:flex-row items-end gap-8 -mt-20 px-8 pb-8">
+          <div className="relative group/avatar">
+            <div className="w-40 h-40 rounded-[40px] bg-black border-[6px] border-[#0a0a0a] overflow-hidden p-1 shadow-2xl">
+              <div className="w-full h-full rounded-[32px] overflow-hidden bg-brand/20 border border-brand/20 flex items-center justify-center text-brand font-black text-5xl">
+                {data.avatarUrl ? (
+                  <img src={data.avatarUrl} alt={data.name || ""} className="w-full h-full object-cover" />
+                ) : (
+                  (data.name || "T").slice(0, 1).toUpperCase()
+                )}
               </div>
-              {data.teacherProfile?.credentials && (
-                <p className="text-sm text-white/40 mt-2">{data.teacherProfile.credentials}</p>
-              )}
-              {data.bio && <p className="text-sm text-white/50 mt-3 leading-relaxed">{data.bio}</p>}
             </div>
           </div>
 
-          <div className="flex flex-col gap-3 shrink-0">
-            <button
-              onClick={toggleFollow}
-              className={`px-5 py-3 rounded-2xl text-sm font-bold transition-all shadow-lg border ${
-                data.isFollowing
-                  ? "bg-brand/20 border-brand/40 text-brand hover:bg-brand/30"
-                  : "bg-white/5 border-white/10 text-white/50 hover:bg-white/10 hover:text-white hover:border-white/20"
-              }`}
-            >
-              {data.isFollowing ? (
-                <span className="inline-flex items-center gap-2">
-                  <UserCheck size={16} />
-                  Following
-                </span>
-              ) : (
-                <span className="inline-flex items-center gap-2">
-                  <UserPlus size={16} />
-                  Follow
-                </span>
-              )}
-            </button>
-
-            <div className="flex items-center gap-3 text-xs text-white/30 font-bold">
-              <span>{data.followerCount} followers</span>
-              <span>•</span>
-              <span>{data.materialsCount} materials</span>
+          <div className="flex-1 min-w-0 pb-2">
+            <div className="flex flex-wrap items-center gap-3 mb-2">
+               <h1 className="text-4xl font-black text-white tracking-tight truncate">{data.name}</h1>
+               <div className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border ${
+                  status === "ONLINE" ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" : "bg-white/5 text-white/40 border-white/10"
+               }`}>
+                  {status}
+               </div>
             </div>
+            
+            <div className="flex items-center gap-4 text-xs font-bold text-white/40">
+               <span className="flex items-center gap-1.5"><Star size={14} className="text-yellow-400" /> {data.avgRating.toFixed(1)} ({data.totalRatings} ratings)</span>
+               <span>•</span>
+               <span className="flex items-center gap-1.5"><UserPlus size={14} /> {data.followerCount} followers</span>
+            </div>
+          </div>
+
+          <div className="pb-2">
+             <button
+               onClick={toggleFollow}
+               className={`px-8 py-4 rounded-[24px] text-sm font-black transition-all shadow-2xl border flex items-center gap-2 group/btn ${
+                 data.isFollowing
+                   ? "bg-brand/20 border-brand/40 text-brand hover:bg-brand/30"
+                   : "bg-brand border-brand text-white hover:scale-105 active:scale-95"
+               }`}
+             >
+               {data.isFollowing ? <UserCheck size={18} /> : <UserPlus size={18} />}
+               {data.isFollowing ? "FOLLOWING" : "FOLLOW CREATOR"}
+             </button>
           </div>
         </div>
+
+        {/* Bio Section */}
+        {data.bio && (
+           <div className="px-8 pb-8 border-t border-white/5 pt-6">
+              <div className="flex items-center gap-3 mb-3">
+                 <div className="w-1.5 h-4 bg-brand rounded-full" />
+                 <h3 className="text-xs font-black text-white/40 uppercase tracking-[0.2em]">Biography</h3>
+              </div>
+              <p className="text-base text-white/60 leading-relaxed max-w-3xl italic">
+                 "{data.bio}"
+              </p>
+           </div>
+        )}
       </motion.div>
 
       <div className="glass rounded-[40px] p-8 border border-white/10">

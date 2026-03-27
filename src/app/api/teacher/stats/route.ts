@@ -10,7 +10,7 @@ export async function GET(req: Request) {
     }
 
     // Parallel fetch for performance
-    const [followers, materials, assignments, profile, ratings] = await Promise.all([
+    const [followers, materials, assignments, profile, ratings, teacherTopics] = await Promise.all([
       prisma.follow.count({ where: { teacherId: user.id } }),
       prisma.material.count({ where: { authorId: user.id } }),
       prisma.assignment.findMany({
@@ -18,8 +18,40 @@ export async function GET(req: Request) {
         include: { _count: { select: { submissions: true } } }
       }),
       prisma.teacherProfile.findUnique({ where: { userId: user.id } }),
-      prisma.rating.findMany({ where: { teacherId: user.id }, select: { score: true } })
+      prisma.rating.findMany({ where: { teacherId: user.id }, select: { score: true } }),
+      prisma.topic.findMany({
+        where: { subject: { teachers: { some: { userId: user.id } } } },
+        select: { id: true }
+      })
     ]);
+
+    const topicIds = teacherTopics.map(t => t.id);
+    const activeComments = await prisma.comment.findMany({
+      where: { thread: { topicId: { in: topicIds } } },
+      take: 20,
+      orderBy: { createdAt: "desc" },
+      include: { 
+        author: { select: { id: true, name: true, avatarUrl: true } },
+        thread: { select: { title: true } }
+      }
+    });
+
+    // Deduplicate responders
+    const seenUsers = new Set();
+    const activeResponders = [];
+    for (const c of activeComments) {
+      if (c.author && c.thread && !seenUsers.has(c.author.id)) {
+        seenUsers.add(c.author.id);
+        activeResponders.push({
+          id: c.author.id,
+          name: c.author.name,
+          avatarUrl: c.author.avatarUrl,
+          lastThreadTitle: c.thread.title,
+          lastRespondedAt: c.createdAt
+        });
+      }
+      if (activeResponders.length >= 5) break;
+    }
 
     const totalSubmissions = assignments.reduce((sum, a) => sum + a._count.submissions, 0);
     const avgRating = ratings.length > 0 
@@ -33,7 +65,8 @@ export async function GET(req: Request) {
       assignmentsCount: assignments.length,
       avgRating,
       totalRatings: ratings.length,
-      status: (profile as any)?.status || "ONLINE"
+      status: (profile as any)?.status || "ONLINE",
+      activeResponders
     });
   } catch (err) {
     return NextResponse.json({ error: "Failed to fetch stats" }, { status: 500 });

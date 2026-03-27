@@ -55,12 +55,51 @@ export async function POST(req: Request) {
 
 export async function GET(req: Request) {
   try {
+    const user = await getUserFromRequest(req as any);
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    let whereClause: any = {};
+
+    if (user.role === "STUDENT") {
+      // 1. Get enrolled subject IDs
+      const enrollments = await prisma.subjectEnrollment.findMany({
+        where: { userId: user.id },
+        select: { subjectId: true }
+      });
+      const enrolledSubjectIds = enrollments.map(e => e.subjectId);
+
+      // 2. Get followed teacher IDs
+      const follows = await prisma.follow.findMany({
+        where: { followerId: user.id },
+        select: { teacherId: true }
+      });
+      const followedTeacherIds = follows.map(f => f.teacherId);
+
+      whereClause = {
+        authorId: { in: followedTeacherIds },
+        topic: {
+          subjectId: { in: enrolledSubjectIds }
+        }
+      };
+    } else if (user.role === "TEACHER") {
+      // Teachers see their own materials by default in many views, but here we can show all or just theirs.
+      // Let's show all for now or specific ones if needed.
+      whereClause = { authorId: user.id };
+    }
+
     const materials = await prisma.material.findMany({
-      include: { author: { select: { name: true, avatarUrl: true }} },
+      where: whereClause,
+      include: { 
+        author: { select: { name: true, avatarUrl: true } },
+        topic: { include: { subject: true } }
+      },
       orderBy: { createdAt: "desc" }
     });
     return NextResponse.json({ success: true, materials });
   } catch (error) {
+    console.error("Fetch Materials Error:", error);
     return NextResponse.json({ error: "Failed to fetch materials" }, { status: 500 });
   }
 }

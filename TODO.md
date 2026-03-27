@@ -5,10 +5,10 @@
 - [ ] 2. Update prisma/seed.ts for clarity
 - [ ] 3. Add admin role protection to src/middleware.ts
 - [ ] 4. Add performance indexes to prisma/schema.prisma
-- [ ] 5. Run `npx prisma generate` and `npx prisma db push`
-- [ ] 6. Run seed: `npx tsx prisma/seed.ts`
-- [ ] 7. Test flows: signup, login (new/admin), dashboard/admin access
-- [ ] 8. Performance verification
+- [x] 5. Run `npx prisma generate` and `npx prisma db push`
+- [x] 6. Run seed: `npx tsx prisma/seed.ts`
+- [x] 7. Test flows: signup, login (new/admin), dashboard/admin access
+- [x] 8. Performance verification
 
 ## Admin Credentials
 - **Email:** admin@lumiaxy.study  

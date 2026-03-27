@@ -151,9 +151,11 @@ export default function AIChat() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
           messages: updatedMessages,
-          conversationId 
+          conversationId,
+          source: "main"
         }),
       });
+
 
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error || "Failed...");

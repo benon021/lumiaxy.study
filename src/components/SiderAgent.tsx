@@ -40,19 +40,41 @@ export default function SiderAgent() {
     }
   }, [messages]);
 
-  const handleSend = () => {
-    if (!input.trim()) return;
-    setMessages(prev => [...prev, { role: "user", content: input }]);
+  const handleSend = async () => {
+    if (!input.trim() || isTyping) return;
+    
+    const userPart = { role: "user", content: input };
+    setMessages(prev => [...prev, userPart]);
     setInput("");
     setIsTyping(true);
-    setTimeout(() => {
+
+    try {
+      const res = await fetch("/api/ai", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          messages: [...messages, userPart],
+          source: "side" 
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error || "Neural link failed.");
+
       setMessages(prev => [...prev, { 
         role: "assistant", 
-        content: "Processing your request through the neural matrix... This feature will connect to the Fusion Engine API for full responses."
+        content: data.content 
       }]);
+    } catch (err: any) {
+      setMessages(prev => [...prev, { 
+        role: "assistant", 
+        content: `Agent Error: ${err.message}` 
+      }]);
+    } finally {
       setIsTyping(false);
-    }, 1500);
+    }
   };
+
 
   // Don't render inside the full AI dashboard
   if (pathname === "/dashboard/ai") return null;

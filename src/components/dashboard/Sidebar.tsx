@@ -3,7 +3,8 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   LayoutDashboard, FileText, BarChart3, User, 
-  Bell, UploadCloud, CheckCircle2, Star, Link2
+  Bell, UploadCloud, CheckCircle2, Star, Link2,
+  FilePlus, ClipboardList
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -25,13 +26,15 @@ const studentRightItems = [
 
 const teacherLeftItems = [
   { label: "Dashboard", icon: LayoutDashboard, href: "/dashboard" },
-  { label: "My Uploads", icon: UploadCloud, href: "/dashboard/teacher/content" },
+  { label: "Post Note", icon: FilePlus, href: "/dashboard/teacher/content?type=NOTE" },
+  { label: "Assignment", icon: ClipboardList, href: "/dashboard/teacher/content?type=ASSIGNMENT" },
+  { label: "My Library", icon: UploadCloud, href: "/dashboard/teacher/content" },
 ];
 
 const teacherRightItems = [
   { label: "Grading", icon: CheckCircle2, href: "/dashboard/teacher/grading" },
   { label: "Reviews", icon: Star, href: "/dashboard/teacher/reviews" },
-  { label: "Notifications", icon: Bell, href: "/dashboard/notifications" },
+  { label: "Settings", icon: Bell, href: "/dashboard/settings" },
 ];
 
 function NavIcon({ href, icon: Icon, label, isActive, isMobile }: any) {

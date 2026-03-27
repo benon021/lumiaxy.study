@@ -2,14 +2,13 @@
 
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Target, CheckCircle2, AlertCircle, FileText, ChevronLeft, Upload } from "lucide-react";
+import { Target, CheckCircle2, AlertCircle, FileText, ChevronLeft, Upload, Sparkles } from "lucide-react";
 import Link from "next/link";
 
 export default function StudentAssignmentsClient() {
   const [assignments, setAssignments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [submittingId, setSubmittingId] = useState<string | null>(null);
-
   const [submissionForms, setSubmissionForms] = useState<Record<string, { content: string, fileUrl: string }>>({});
 
   useEffect(() => {
@@ -33,7 +32,7 @@ export default function StudentAssignmentsClient() {
     if (!file) return;
 
     if (file.size > 2 * 1024 * 1024) {
-      alert("Attachment too large for base64 upload! Max 2MB.");
+      alert("Attachment too large! Max 2MB.");
       return;
     }
 
@@ -66,7 +65,14 @@ export default function StudentAssignmentsClient() {
     }
   };
 
-  if (loading) return <div className="p-8 text-center text-white/50 animate-pulse">Syncing Active Assignments...</div>;
+  if (loading) return (
+    <div className="max-w-6xl mx-auto p-4 lg:p-8 space-y-8 pb-32">
+      <div className="h-8 w-48 bg-white/5 animate-pulse rounded-lg mb-8" />
+      <div className="space-y-6">
+        {[1,2,3].map(i => <div key={i} className="h-48 glass rounded-[32px] animate-pulse" />)}
+      </div>
+    </div>
+  );
 
   return (
     <div className="max-w-6xl mx-auto p-4 lg:p-8 space-y-8 pb-32">
@@ -79,7 +85,7 @@ export default function StudentAssignmentsClient() {
          <h1 className="text-3xl font-bold text-white tracking-tight flex items-center gap-3 mb-2">
            <Target className="text-purple-400" size={28} /> Active Assignments
          </h1>
-         <p className="text-white/40">Complete your educator-issued modules and track grades.</p>
+         <p className="text-white/40">Complete your modules and track your grades effortlessly.</p>
       </div>
 
       <div className="space-y-6 mt-8">
@@ -88,14 +94,20 @@ export default function StudentAssignmentsClient() {
              You have no active assignments. Enjoy the extra free time!
            </div>
          ) : assignments.map(a => {
-           const sub = a.submissions?.[0]; // Current user's submission
+           const sub = a.submissions?.[0];
            const isGraded = sub?.score !== null && sub?.score !== undefined;
+           const type = a.type || "TEXT";
            
            return (
              <motion.div key={a.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="glass rounded-[32px] p-6 border border-white/10 md:p-8 flex flex-col md:flex-row gap-8 items-start relative overflow-hidden">
                 <div className="flex-1 space-y-4 relative z-10 w-full">
-                  <div className="inline-flex px-3 py-1 rounded-full bg-purple-500/10 text-purple-400 text-[10px] font-bold tracking-widest uppercase border border-purple-500/20">
-                     {a.maxScore} PTS
+                  <div className="flex items-center gap-3">
+                    <div className="inline-flex px-3 py-1 rounded-full bg-purple-500/10 text-purple-400 text-[10px] font-bold tracking-widest uppercase border border-purple-500/20">
+                       {a.maxScore} PTS
+                    </div>
+                    <div className="inline-flex px-3 py-1 rounded-full bg-white/5 text-white/40 text-[10px] font-bold tracking-widest uppercase border border-white/10">
+                       {type}
+                    </div>
                   </div>
                   
                   <div>
@@ -108,7 +120,15 @@ export default function StudentAssignmentsClient() {
                      {a.dueDate && (
                        <>
                          <span>•</span>
-                         <span>Due: {new Date(a.dueDate).toLocaleDateString()}</span>
+                         <span className={new Date(a.dueDate) < new Date() ? "text-red-400" : ""}>
+                           Due: {new Date(a.dueDate).toLocaleDateString()}
+                         </span>
+                       </>
+                     )}
+                     {a.topic?.subject && (
+                       <>
+                         <span>•</span>
+                         <span className="text-brand/60">{a.topic.subject.name}</span>
                        </>
                      )}
                   </div>
@@ -135,39 +155,59 @@ export default function StudentAssignmentsClient() {
                            <AlertCircle size={24} />
                            <h4 className="font-bold text-lg">In Review</h4>
                         </div>
-                        <p className="text-sm text-white/60 mb-4">Your submission was sent on {new Date(sub.submittedAt).toLocaleDateString()}. Your educator is reviewing it.</p>
+                        <p className="text-sm text-white/60 mb-4">Submitted on {new Date(sub.submittedAt).toLocaleDateString()}. Educator review pending.</p>
                         
                         <div className="p-3 bg-black/20 rounded-xl border border-white/5 line-clamp-2 text-xs text-white/40 font-mono">
-                           {sub.fileUrl ? "Document Attachment Provided" : sub.content}
+                           {sub.fileUrl ? "Document Attachment Provided" : (sub.content || "Submission details in review")}
                         </div>
                      </div>
                    ) : (
                      <div className="glass p-6 rounded-[24px] border border-white/10 bg-black/40">
-                        <h4 className="font-bold text-white mb-4 flex items-center gap-2"><Upload size={18} className="text-brand"/> Upload Response</h4>
+                        <h4 className="font-bold text-white mb-4 flex items-center gap-2">
+                          {type === "MCQ" ? <Sparkles size={18} className="text-brand"/> : <Upload size={18} className="text-brand"/>} 
+                          {type === "MCQ" ? "Begin Quiz" : "Your Submission"}
+                        </h4>
                         
                         <div className="space-y-4">
-                           <textarea
-                             placeholder="Type your response or comments directly..."
-                             rows={3}
-                             value={submissionForms[a.id]?.content || ""}
-                             onChange={e => setSubmissionForms(p => ({ ...p, [a.id]: { ...p[a.id], content: e.target.value }}))}
-                             className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-brand/50 transition-colors resize-none"
-                           />
-                           
-                           <div className="relative group cursor-pointer border border-dashed border-white/20 hover:border-brand/50 rounded-xl p-4 flex flex-col items-center justify-center transition-colors bg-white/[0.02]">
-                              <input type="file" accept=".pdf,.doc,.docx" onChange={(e) => handleFileUpload(a.id, e)} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
-                              <p className="text-[11px] font-bold uppercase tracking-widest text-white/40 group-hover:text-white transition-colors truncate w-full text-center">
-                                {submissionForms[a.id]?.fileUrl ? "Document Attached" : "Attach File (Max 2MB)"}
-                              </p>
-                           </div>
+                           {type === "MCQ" ? (
+                             <div className="space-y-4">
+                               <p className="text-xs text-white/40">Take this automated quiz to receive an instant grade.</p>
+                               <button 
+                                 className="w-full bg-brand text-white font-bold py-3 rounded-xl hover:bg-brand-600 active:scale-95 transition-all shadow-xl"
+                               >
+                                 Start Exercise
+                               </button>
+                             </div>
+                           ) : (
+                              <>
+                                 {(type === "TEXT" || type === "HYBRID") && (
+                                   <textarea
+                                     placeholder="Type your response..."
+                                     rows={3}
+                                     value={submissionForms[a.id]?.content || ""}
+                                     onChange={e => setSubmissionForms(p => ({ ...p, [a.id]: { ...p[a.id], content: e.target.value }}))}
+                                     className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-brand/50 transition-colors resize-none"
+                                   />
+                                 )}
+                                 
+                                 {(type === "FILE" || type === "HYBRID") && (
+                                   <div className="relative group cursor-pointer border border-dashed border-white/20 hover:border-brand/50 rounded-xl p-4 flex flex-col items-center justify-center transition-colors bg-white/[0.02]">
+                                     <input type="file" accept=".pdf,.doc,.docx" onChange={(e) => handleFileUpload(a.id, e)} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
+                                     <p className="text-[11px] font-bold uppercase tracking-widest text-white/40 group-hover:text-white transition-colors truncate w-full text-center">
+                                       {submissionForms[a.id]?.fileUrl ? "Document Attached" : "Attach File"}
+                                     </p>
+                                   </div>
+                                 )}
 
-                           <button 
-                             onClick={() => handleSubmit(a.id)}
-                             disabled={submittingId === a.id || (!submissionForms[a.id]?.content && !submissionForms[a.id]?.fileUrl)}
-                             className="w-full bg-brand text-white font-bold py-3 rounded-xl hover:bg-brand-600 active:scale-95 transition-all shadow-xl shadow-brand/20 disabled:opacity-50 text-sm disabled:active:scale-100"
-                           >
-                              {submittingId === a.id ? "Submitting..." : "Submit Answer"}
-                           </button>
+                                 <button 
+                                   onClick={() => handleSubmit(a.id)}
+                                   disabled={submittingId === a.id || (!submissionForms[a.id]?.content && !submissionForms[a.id]?.fileUrl)}
+                                   className="w-full bg-brand text-white font-bold py-3 rounded-xl hover:bg-brand-600 active:scale-95 transition-all shadow-xl shadow-brand/20 disabled:opacity-50 text-sm"
+                                 >
+                                   {submittingId === a.id ? "Submitting..." : "Submit Answer"}
+                                 </button>
+                              </>
+                           )}
                         </div>
                      </div>
                    )}

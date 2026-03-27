@@ -5,22 +5,33 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 
 export async function POST(req: Request) {
   try {
-    const { messages, image, conversationId } = await req.json();
+    const { messages, image, conversationId, source = "main" } = await req.json();
     const user = await getUserFromRequest(req);
 
-    // 1. Get API Key
-    const dbSetting = await (prisma as any).setting.findUnique({
-      where: { key: "GEMINI_API_KEY" }
-    });
+    // 1. Get API Key based on source
+    const keyName = source === "side" ? "GEMINI_SIDE_API_KEY" : "GEMINI_MAIN_API_KEY";
     
-    const apiKey = dbSetting?.value || process.env.GEMINI_API_KEY;
+    let apiKey = process.env[keyName];
+
+    // Check DB first if possible, then fallback to .env
+    try {
+      const dbSetting = await (prisma as any).setting.findUnique({
+        where: { key: keyName }
+      });
+      if (dbSetting?.value) {
+        apiKey = dbSetting.value;
+      }
+    } catch (dbError) {
+      console.warn(`Database lookup for ${keyName} failed, falling back to environment variables:`, dbError);
+    }
 
     if (!apiKey || apiKey === "YOUR_GEMINI_API_KEY_HERE") {
       return NextResponse.json(
-        { error: "Gemini API Key not configured. Please contact the administrator." },
+        { error: `Gemini ${source} API Key not configured. Please set ${keyName} in .env or Settings.` },
         { status: 500 }
       );
     }
+
 
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });

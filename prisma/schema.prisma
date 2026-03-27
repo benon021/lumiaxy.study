@@ -8,125 +8,115 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
-// ===== CORE IDENTITY =====
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  name      String?
-  password  String
-  role      String   @default("STUDENT") // STUDENT | TEACHER | ADMIN
-  avatarUrl String?
-  bio       String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  preferences String? // JSON string for vast role-based settings (theme, notifications, etc.)
-
-  teacherProfile  TeacherProfile?
-  followedBy      Follow[]            @relation("TeacherFollows")
-  following       Follow[]            @relation("StudentFollows")
-  submittedWork   Submission[]
-  quizAttempts    QuizAttempt[]
-  ratingsGiven    Rating[]            @relation("RatingsGiven")
-  ratingsReceived Rating[]            @relation("RatingsReceived")
-  comments        Comment[]
-  notifications   Notification[]
-  badges          UserBadge[]
-  materials       Material[]
-  assignments     Assignment[]
-  quizzes         Quiz[]
-  bookmarks       Bookmark[]
+  id              String           @id @default(cuid())
+  email           String           @unique
+  name            String?
+  password        String
+  role            String           @default("STUDENT")
+  avatarUrl       String?
+  coverUrl        String?
+  bio             String?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  preferences     String?
   aiConversations AIConversation[]
+  assignments     Assignment[]
+  bookmarks       Bookmark[]
+  comments        Comment[]
+  following       Follow[]         @relation("StudentFollows")
+  followedBy      Follow[]         @relation("TeacherFollows")
+  materials       Material[]
+  notifications   Notification[]
+  quizzes         Quiz[]
+  quizAttempts    QuizAttempt[]
+  ratingsGiven    Rating[]         @relation("RatingsGiven")
+  ratingsReceived Rating[]         @relation("RatingsReceived")
+  submittedWork   Submission[]
+  teacherProfile  TeacherProfile?
+  badges          UserBadge[]
 }
 
 model TeacherProfile {
-  id          String   @id @default(cuid())
-  userId      String   @unique
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  subjectIds  String   @default("")
+  id          String    @id @default(cuid())
+  userId      String    @unique
+  subjects    Subject[]
   officeHours String?
   contactInfo String?
   credentials String?
-  status      String   @default("ONLINE") // ONLINE | OFFLINE | PRIVATE
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  status      String    @default("ONLINE")
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
-// ===== ACADEMIC STRUCTURE =====
-
 model Subject {
-  id          String   @id @default(cuid())
+  id          String           @id @default(cuid())
   name        String
   description String?
   iconUrl     String?
-  createdAt   DateTime @default(now())
-
+  createdAt   DateTime         @default(now())
   topics      Topic[]
+  teachers    TeacherProfile[]
 }
 
 model Topic {
-  id          String   @id @default(cuid())
+  id          String             @id @default(cuid())
   name        String
   description String?
   subjectId   String
-  subject     Subject  @relation(fields: [subjectId], references: [id], onDelete: Cascade)
-  createdAt   DateTime @default(now())
-
-  materials   Material[]
-  discussions DiscussionThread[]
+  createdAt   DateTime           @default(now())
   bookmarks   Bookmark[]
+  threads     DiscussionThread[] @relation("TopicThreads")
+  materials   Material[]
+  subject     Subject            @relation(fields: [subjectId], references: [id], onDelete: Cascade)
 }
-
-// ===== CONTENT =====
 
 model Material {
-  id          String   @id @default(cuid())
+  id          String     @id @default(cuid())
   title       String
   description String?
-  type        String   @default("NOTE") // NOTE | PDF | VIDEO_LINK | ASSIGNMENT_FILE
+  type        String     @default("NOTE")
   fileUrl     String?
   videoUrl    String?
-  isPinned    Boolean  @default(false)
-  isScheduled Boolean  @default(false)
+  isPinned    Boolean    @default(false)
+  isScheduled Boolean    @default(false)
   scheduledAt DateTime?
   topicId     String
-  topic       Topic    @relation(fields: [topicId], references: [id], onDelete: Cascade)
   authorId    String
-  author      User     @relation(fields: [authorId], references: [id])
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  comments    Comment[]
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
   bookmarks   Bookmark[]
+  comments    Comment[]
+  author      User       @relation(fields: [authorId], references: [id])
+  topic       Topic      @relation(fields: [topicId], references: [id], onDelete: Cascade)
 }
 
-// ===== ASSESSMENTS =====
-
 model Assignment {
-  id           String       @id @default(cuid())
-  title        String
-  description  String
-  dueDate      DateTime?
-  maxScore     Float        @default(100)
-  teacherId    String
-  teacher      User         @relation(fields: [teacherId], references: [id])
-  createdAt    DateTime     @default(now())
-  updatedAt    DateTime     @updatedAt
-
-  submissions  Submission[]
+  id          String       @id @default(cuid())
+  title       String
+  description String
+  dueDate     DateTime?
+  maxScore    Float        @default(100)
+  teacherId   String
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  teacher     User         @relation(fields: [teacherId], references: [id])
+  submissions Submission[]
 }
 
 model Submission {
   id           String     @id @default(cuid())
   assignmentId String
-  assignment   Assignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
   studentId    String
-  student      User       @relation(fields: [studentId], references: [id])
   content      String?
   fileUrl      String?
   score        Float?
   feedback     String?
   submittedAt  DateTime   @default(now())
   gradedAt     DateTime?
+  assignment   Assignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+  student      User       @relation(fields: [studentId], references: [id])
 
   @@unique([assignmentId, studentId])
 }
@@ -136,57 +126,54 @@ model Quiz {
   title       String
   description String?
   teacherId   String
-  teacher     User          @relation(fields: [teacherId], references: [id])
   createdAt   DateTime      @default(now())
-
   questions   Question[]
+  teacher     User          @relation(fields: [teacherId], references: [id])
   attempts    QuizAttempt[]
 }
 
 model Question {
   id            String   @id @default(cuid())
   quizId        String
-  quiz          Quiz     @relation(fields: [quizId], references: [id], onDelete: Cascade)
   text          String
-  options       String   // JSON-encoded array of answer choices
+  options       String
   correctOption Int
   createdAt     DateTime @default(now())
+  quiz          Quiz     @relation(fields: [quizId], references: [id], onDelete: Cascade)
 }
 
 model QuizAttempt {
   id          String   @id @default(cuid())
   quizId      String
-  quiz        Quiz     @relation(fields: [quizId], references: [id])
   studentId   String
-  student     User     @relation(fields: [studentId], references: [id])
   score       Float
   attemptedAt DateTime @default(now())
+  quiz        Quiz     @relation(fields: [quizId], references: [id])
+  student     User     @relation(fields: [studentId], references: [id])
 
   @@unique([quizId, studentId])
 }
 
-// ===== SOCIAL & ENGAGEMENT =====
-
 model Follow {
-  id          String   @id @default(cuid())
-  followerId  String
-  follower    User     @relation("StudentFollows", fields: [followerId], references: [id])
-  teacherId   String
-  teacher     User     @relation("TeacherFollows", fields: [teacherId], references: [id])
-  createdAt   DateTime @default(now())
+  id         String   @id @default(cuid())
+  followerId String
+  teacherId  String
+  createdAt  DateTime @default(now())
+  follower   User     @relation("StudentFollows", fields: [followerId], references: [id])
+  teacher    User     @relation("TeacherFollows", fields: [teacherId], references: [id])
 
   @@unique([followerId, teacherId])
 }
 
 model Rating {
-  id          String   @id @default(cuid())
-  score       Int      // 1-5
-  review      String?
-  raterId     String
-  rater       User     @relation("RatingsGiven", fields: [raterId], references: [id])
-  teacherId   String
-  teacher     User     @relation("RatingsReceived", fields: [teacherId], references: [id])
-  createdAt   DateTime @default(now())
+  id        String   @id @default(cuid())
+  score     Int
+  review    String?
+  raterId   String
+  teacherId String
+  createdAt DateTime @default(now())
+  rater     User     @relation("RatingsGiven", fields: [raterId], references: [id])
+  teacher   User     @relation("RatingsReceived", fields: [teacherId], references: [id])
 
   @@unique([raterId, teacherId])
 }
@@ -194,46 +181,47 @@ model Rating {
 model DiscussionThread {
   id        String    @id @default(cuid())
   title     String
+  type      String    @default("GENERAL")
+  question  String?
   topicId   String
-  topic     Topic     @relation(fields: [topicId], references: [id], onDelete: Cascade)
   createdAt DateTime  @default(now())
-
   comments  Comment[]
+  topic     Topic     @relation("TopicThreads", fields: [topicId], references: [id], onDelete: Cascade)
 }
 
 model Comment {
-  id          String            @id @default(cuid())
-  content     String
-  authorId    String
-  author      User              @relation(fields: [authorId], references: [id])
-  threadId    String?
-  thread      DiscussionThread? @relation(fields: [threadId], references: [id])
-  materialId  String?
-  material    Material?         @relation(fields: [materialId], references: [id])
-  isFlagged   Boolean           @default(false)
-  createdAt   DateTime          @default(now())
+  id         String            @id @default(cuid())
+  content    String
+  authorId   String
+  threadId   String?
+  materialId String?
+  isFlagged  Boolean           @default(false)
+  createdAt  DateTime          @default(now())
+  author     User              @relation(fields: [authorId], references: [id])
+  material   Material?         @relation(fields: [materialId], references: [id])
+  thread     DiscussionThread? @relation(fields: [threadId], references: [id])
 }
 
 model Bookmark {
   id         String    @id @default(cuid())
   userId     String
-  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   materialId String?
-  material   Material? @relation(fields: [materialId], references: [id])
   topicId    String?
-  topic      Topic?    @relation(fields: [topicId], references: [id])
   createdAt  DateTime  @default(now())
+  material   Material? @relation(fields: [materialId], references: [id])
+  topic      Topic?    @relation(fields: [topicId], references: [id])
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Notification {
   id        String   @id @default(cuid())
   userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  type      String   // NEW_MATERIAL | GRADE_RELEASED | NEW_FOLLOWER | DEADLINE_REMINDER
+  type      String
   message   String
   isRead    Boolean  @default(false)
   link      String?
   createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Badge {
@@ -242,22 +230,19 @@ model Badge {
   description String
   iconUrl     String?
   createdAt   DateTime    @default(now())
-
   users       UserBadge[]
 }
 
 model UserBadge {
   id        String   @id @default(cuid())
   userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   badgeId   String
-  badge     Badge    @relation(fields: [badgeId], references: [id])
   awardedAt DateTime @default(now())
+  badge     Badge    @relation(fields: [badgeId], references: [id])
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, badgeId])
 }
-
-// ===== CONFIG =====
 
 model Setting {
   id    String @id @default(cuid())
@@ -265,25 +250,21 @@ model Setting {
   value String
 }
 
-// ===== AI CONVERSATIONS =====
-
 model AIConversation {
   id        String      @id @default(cuid())
   title     String      @default("New Chat")
   userId    String
-  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt DateTime    @default(now())
   updatedAt DateTime    @updatedAt
-
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   messages  AIMessage[]
 }
 
 model AIMessage {
   id             String         @id @default(cuid())
   conversationId String
-  conversation   AIConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-  role           String         // "user" | "assistant"
+  role           String
   content        String
   createdAt      DateTime       @default(now())
+  conversation   AIConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
 }
-

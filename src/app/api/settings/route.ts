@@ -11,7 +11,18 @@ export async function GET(req: Request) {
 
     const dbUser = await prisma.user.findUnique({
       where: { id: user.id },
-      select: { preferences: true, role: true, name: true, email: true, avatarUrl: true, bio: true, teacherProfile: true }
+      select: { 
+        preferences: true, 
+        role: true, 
+        name: true, 
+        email: true, 
+        avatarUrl: true, 
+        coverUrl: true,
+        bio: true, 
+        teacherProfile: {
+          include: { subjects: true }
+        }
+      }
     });
 
     let preferences = {};
@@ -27,7 +38,10 @@ export async function GET(req: Request) {
       success: true,
       data: {
         ...dbUser,
-        preferences
+        preferences,
+        subjects: dbUser?.teacherProfile?.subjects || [],
+        credentials: dbUser?.teacherProfile?.credentials,
+        officeHours: dbUser?.teacherProfile?.officeHours,
       }
     }, { status: 200 });
 
@@ -45,47 +59,70 @@ export async function PUT(req: Request) {
     }
 
     const body = await req.json();
-    const { name, bio, preferences, avatarUrl, credentials, officeHours } = body;
+    const { name, bio, preferences, avatarUrl, coverUrl, credentials, officeHours, subjects } = body;
 
     const updateData: any = {};
     if (name !== undefined) updateData.name = name;
     if (bio !== undefined) updateData.bio = bio;
     if (avatarUrl !== undefined) updateData.avatarUrl = avatarUrl;
+    if (coverUrl !== undefined) updateData.coverUrl = coverUrl;
     if (preferences !== undefined) {
       updateData.preferences = JSON.stringify(preferences);
     }
 
     // Update teacher profile if role is TEACHER
-    if (user.role === "TEACHER" && (credentials !== undefined || officeHours !== undefined)) {
+    if (user.role === "TEACHER") {
       updateData.teacherProfile = {
         upsert: {
           create: {
             credentials: credentials || "",
             officeHours: officeHours || "",
+            subjects: subjects ? { connect: subjects.map((id: string) => ({ id })) } : undefined
           },
           update: {
             ...(credentials !== undefined && { credentials }),
             ...(officeHours !== undefined && { officeHours }),
+            ...(subjects !== undefined && {
+              subjects: {
+                set: subjects.map((id: string) => ({ id }))
+              }
+            })
           }
         }
       };
     }
 
-    const updatedUser = await prisma.user.update({
+    await prisma.user.update({
       where: { id: user.id },
-      data: updateData,
-      select: { preferences: true, name: true, bio: true, avatarUrl: true, teacherProfile: true }
+      data: updateData
     });
+
+    const finalUser = await prisma.user.findUnique({
+      where: { id: user.id },
+      select: { 
+        preferences: true, 
+        role: true, 
+        name: true, 
+        email: true, 
+        avatarUrl: true, 
+        coverUrl: true,
+        bio: true, 
+        teacherProfile: {
+          include: { subjects: true }
+        }
+      }
+    });
+
+    const finalPrefs = finalUser?.preferences ? JSON.parse(finalUser.preferences) : {};
 
     return NextResponse.json({
       success: true,
       data: {
-        name: updatedUser.name,
-        bio: updatedUser.bio,
-        avatarUrl: updatedUser.avatarUrl,
-        credentials: updatedUser.teacherProfile?.credentials,
-        officeHours: updatedUser.teacherProfile?.officeHours,
-        preferences: updatedUser.preferences ? JSON.parse(updatedUser.preferences) : {}
+        ...finalUser,
+        preferences: finalPrefs,
+        subjects: finalUser?.teacherProfile?.subjects || [],
+        credentials: finalUser?.teacherProfile?.credentials,
+        officeHours: finalUser?.teacherProfile?.officeHours,
       }
     }, { status: 200 });
 

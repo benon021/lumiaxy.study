@@ -49,13 +49,18 @@ export default function SettingsPage() {
   const [saving, setSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
 
+  const [subjects, setSubjects] = useState<any[]>([]);
+
+  const [isEditingBio, setIsEditingBio] = useState(false);
+  const [newTopicName, setNewTopicName] = useState("");
+  const [selectingSubjectId, setSelectingSubjectId] = useState<string | null>(null);
+
   useEffect(() => {
     fetch("/api/settings")
       .then(res => res.json())
       .then(data => {
         if (data.success) {
           setUser(data.data);
-          // Load robust defaults if missing
           setPreferences(data.data.preferences || {
             push_notifications: true,
             email_alerts: true,
@@ -71,21 +76,33 @@ export default function SettingsPage() {
         }
       })
       .finally(() => setLoading(false));
+
+    fetch("/api/subjects")
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) setSubjects(data.subjects);
+      });
   }, []);
 
-  const handleSave = async () => {
+  const handleSave = async (customData?: any) => {
     setSaving(true);
     setSaveSuccess(false);
     try {
+      const payload = { 
+        preferences,
+        bio: user?.bio,
+        avatarUrl: user?.avatarUrl,
+        coverUrl: user?.coverUrl,
+        credentials: user?.credentials,
+        officeHours: preferences?.teacher_office_status,
+        subjects: user?.subjects?.map((s: any) => s.id),
+        ...customData
+      };
+
       const res = await fetch("/api/settings", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          preferences,
-          avatarUrl: user?.avatarUrl,
-          credentials: user?.credentials,
-          officeHours: preferences?.teacher_office_status
-        })
+        body: JSON.stringify(payload)
       });
       if (res.ok) setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 3000);
@@ -96,14 +113,35 @@ export default function SettingsPage() {
     }
   };
 
-  const handleAvatarUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = (field: "avatarUrl" | "coverUrl", e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
       reader.onloadend = () => {
-        setUser((prev: any) => ({ ...prev, avatarUrl: reader.result as string }));
+        const result = reader.result as string;
+        setUser((prev: any) => ({ ...prev, [field]: result }));
+        handleSave({ [field]: result }); // Auto-save on upload
       };
       reader.readAsDataURL(file);
+    }
+  };
+
+  const handleCreateTopic = async (subjectId: string) => {
+    if (!newTopicName) return;
+    try {
+      const res = await fetch("/api/teacher/topics", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: newTopicName, subjectId })
+      });
+      if (res.ok) {
+        setNewTopicName("");
+        const sRes = await fetch("/api/subjects");
+        const sData = await sRes.json();
+        if (sData.success) setSubjects(sData.subjects);
+      }
+    } catch (e) {
+      console.error(e);
     }
   };
 
@@ -150,29 +188,116 @@ export default function SettingsPage() {
     switch (selected) {
       case "account":
         return (
-          <div className="space-y-6">
-            <div className="flex items-center gap-4 mb-6">
-               <div className="relative group cursor-pointer">
-                 <div className="w-16 h-16 rounded-full bg-brand/20 border border-brand p-1 overflow-hidden">
-                    {user?.avatarUrl ? (
-                      <img src={user.avatarUrl} alt="Avatar" className="w-full h-full rounded-full object-cover" />
-                    ) : (
-                      <div className="w-full h-full rounded-full bg-brand/30 flex items-center justify-center font-bold text-brand">{user?.name?.charAt(0)}</div>
-                    )}
-                 </div>
-                 <div className="absolute inset-0 bg-black/60 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                    <span className="text-[9px] uppercase font-bold text-white text-center px-1">Upload DP</span>
-                 </div>
-                 <input type="file" accept="image/*" onChange={handleAvatarUpload} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
-               </div>
-               <div>
-                 <h3 className="text-xl font-bold text-white">{user?.name}</h3>
-                 <p className="text-sm text-white/50">{user?.role} • {user?.email}</p>
-               </div>
+          <div className="space-y-12">
+            {/* Premium Header Layout */}
+            <div className="relative">
+              {/* Cover Image Area */}
+              <div className="h-48 w-full rounded-[32px] overflow-hidden bg-white/5 border border-white/10 relative group bg-gradient-to-br from-brand/20 to-brand-600/10">
+                {user?.coverUrl ? (
+                  <img src={user.coverUrl} alt="Cover" className="w-full h-full object-cover" />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-white/10">
+                    <Database size={48} />
+                  </div>
+                )}
+                <div className="absolute top-4 right-4">
+                  <label className="flex items-center gap-2 px-4 py-2 bg-black/40 hover:bg-black/60 backdrop-blur-md rounded-xl text-white text-[10px] font-black uppercase tracking-widest cursor-pointer transition-all border border-white/10">
+                    <Settings size={14} /> Edit Cover
+                    <input type="file" accept="image/*" onChange={(e) => handleFileUpload("coverUrl", e)} className="hidden" />
+                  </label>
+                </div>
+              </div>
+
+              {/* Profile Header Info */}
+              <div className="flex flex-col md:flex-row items-end gap-6 -mt-12 px-8 relative z-10">
+                <div className="relative group">
+                  <div className="w-32 h-32 rounded-[32px] bg-black border-[6px] border-[#0a0a0a] overflow-hidden p-1">
+                    <div className="w-full h-full rounded-[24px] overflow-hidden bg-brand/20 border border-brand/20 flex items-center justify-center relative">
+                      {user?.avatarUrl ? (
+                        <img src={user.avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+                      ) : (
+                        <span className="text-4xl font-bold text-brand">{user?.name?.charAt(0)}</span>
+                      )}
+                    </div>
+                  </div>
+                  <label className="absolute bottom-2 right-2 w-10 h-10 bg-brand rounded-2xl flex items-center justify-center text-white shadow-xl cursor-pointer hover:scale-110 active:scale-95 transition-all border-4 border-[#0a0a0a]">
+                    <UserCircle2 size={18} />
+                    <input type="file" accept="image/*" onChange={(e) => handleFileUpload("avatarUrl", e)} className="hidden" />
+                  </label>
+                </div>
+
+                <div className="flex-1 pb-2">
+                  <div className="flex items-center gap-3">
+                    <h1 className="text-4xl font-black text-white tracking-tighter">{user?.name}</h1>
+                    <span className="bg-emerald-500/10 text-emerald-400 text-[10px] font-black px-3 py-1 rounded-full border border-emerald-500/20 uppercase tracking-widest">
+                      {user?.role} Profile
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-4 mt-2 text-white/40 text-sm font-medium">
+                    <span className="flex items-center gap-1.5"><Globe size={14}/> {user?.email}</span>
+                    <span>•</span>
+                    <span className="flex items-center gap-1.5 hover:text-brand cursor-pointer transition-colors">Personalize Identity <ChevronRight size={14}/></span>
+                  </div>
+                </div>
+              </div>
             </div>
-            {listItem("update_profile", "Update Identity Identity", "Modify your display name, biography, and avatar photo.", false)}
-            {listItem("email_prefs", "Email Frequency Cap", "Control how often Lumiaxy sends you summary emails.", false)}
-            {listItem("lang_settings", "Language & Region", "Currently set to English (US).", false)}
+
+            {/* Biography Section */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 px-2">
+              <div className="lg:col-span-2 space-y-6">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-bold text-white flex items-center gap-3">
+                     <span className="w-1.5 h-6 bg-brand rounded-full "/>
+                     Professional Biography
+                  </h3>
+                  <button 
+                    onClick={() => setIsEditingBio(!isEditingBio)}
+                    className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-white/40 hover:text-white transition-colors"
+                  >
+                    {isEditingBio ? "Done Editing" : "Edit Bio"}
+                  </button>
+                </div>
+                
+                <div className="glass p-8 rounded-[32px] border border-white/5 relative bg-white/[0.01]">
+                   {isEditingBio ? (
+                     <textarea 
+                        value={user?.bio || ""}
+                        onChange={(e) => setUser({...user, bio: e.target.value})}
+                        autoFocus
+                        onBlur={() => {
+                          setIsEditingBio(false);
+                          handleSave();
+                        }}
+                        className="w-full bg-transparent text-white/80 text-sm leading-relaxed outline-none resize-none min-h-[120px]"
+                        placeholder="Tell students about your journey..."
+                     />
+                   ) : (
+                     <p className="text-white/60 text-sm leading-relaxed italic">
+                        "{user?.bio || "No biography provided. Click edit to introduce yourself."}"
+                     </p>
+                   )}
+                </div>
+              </div>
+
+              <div className="space-y-6">
+                <h3 className="text-lg font-bold text-white flex items-center gap-3">
+                   <span className="w-1.5 h-6 bg-cyan-400 rounded-full "/>
+                   Identity Stats
+                </h3>
+                <div className="space-y-3">
+                  {[
+                    { label: "Role Tier", val: user?.role, color: "text-brand" },
+                    { label: "Joined", val: new Date(user?.createdAt).toLocaleDateString(), color: "text-white/40" },
+                    { label: "Contributions", val: "124 Modules", color: "text-white/40" }
+                  ].map((s, i) => (
+                    <div key={i} className="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/5">
+                      <span className="text-[10px] font-black text-white/20 uppercase tracking-widest">{s.label}</span>
+                      <span className={`text-xs font-bold ${s.color}`}>{s.val}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
           </div>
         );
       case "notifications":
@@ -211,36 +336,118 @@ export default function SettingsPage() {
         );
       case "teacher_tools":
         return (
-          <div className="space-y-6 border-brand/30 border p-6 rounded-3xl bg-brand/5">
-            <h3 className="text-lg font-bold text-white mb-4">Educator Overrides</h3>
-            
-            <div className="mb-6 space-y-2">
-              <label className="text-xs font-bold text-white/50 uppercase tracking-widest">Verification Credentials</label>
-              <p className="text-[11px] text-white/40 mb-2">Provide brief details on your expertise to legitimize your profile to students.</p>
-              <textarea 
-                value={user?.credentials || ""}
-                onChange={(e) => setUser((p: any) => ({ ...p, credentials: e.target.value }))}
-                placeholder="e.g. PhD in Physics, 5 years teaching AP Chemistry."
-                className="w-full bg-black/40 border border-brand/20 text-white rounded-xl px-4 py-3 outline-none text-sm resize-none h-20 placeholder:text-white/20"
-              />
-            </div>
+          <div className="space-y-12">
+            <div className="border-brand/30 border p-8 rounded-[40px] bg-brand/5 relative overflow-hidden">
+              <div className="relative z-10">
+                <h3 className="text-2xl font-bold text-white mb-6 flex items-center gap-3">
+                  <GraduationCap className="text-brand" /> 
+                  Subject Portfolio
+                </h3>
+                
+                <div className="space-y-6">
+                  {/* Subject Selection (Animated) */}
+                  <div className="space-y-3">
+                    <label className="text-xs font-black text-white/30 uppercase tracking-[0.2em]">Disciplines You Teach</label>
+                    <p className="text-xs text-white/40 mb-4">Select the areas you want to manage content for.</p>
+                    
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                      {subjects?.map((subject: any, idx: number) => {
+                        const isSelected = user?.subjects?.some((s: any) => s.id === subject.id);
+                        return (
+                          <motion.button
+                            key={subject.id}
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: idx * 0.05 }}
+                            onClick={() => {
+                              const newSubjects = isSelected 
+                                ? user.subjects.filter((s: any) => s.id !== subject.id)
+                                : [...(user.subjects || []), subject];
+                              const customPayload = { subjects: newSubjects.map((s: any) => s.id) };
+                              setUser({ ...user, subjects: newSubjects });
+                              handleSave(customPayload);
+                            }}
+                            className={`flex items-center gap-3 p-3 rounded-2xl border transition-all ${
+                              isSelected 
+                                ? "bg-brand/20 border-brand/50 text-white shadow-[0_0_20px_rgba(98,114,241,0.2)]" 
+                                : "bg-white/5 border-white/5 text-white/40 hover:bg-white/10 hover:border-white/20"
+                            }`}
+                          >
+                            <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${isSelected ? "bg-brand text-white" : "bg-white/5"}`}>
+                              {isSelected ? <Check size={16} /> : <BookOpen size={16} />}
+                            </div>
+                            <span className="text-xs font-bold">{subject.name}</span>
+                          </motion.button>
+                        );
+                      })}
+                    </div>
+                  </div>
 
-            {listItem("teacher_grading_alerts", "Submission Alerts", "Notify immediately when a student turns in an assignment.", true)}
-            {listItem("teacher_auto_grade", "AI Pre-Grading", "Allow Fusion AI to generate preliminary scores on essays.", true)}
-            <div className="pt-4 mt-4 border-t border-brand/20">
-               <label className="text-xs font-bold text-white/50 uppercase tracking-widest">Office Hours Visibility</label>
-               <select 
-                 className="w-full mt-2 bg-black/40 border border-brand/20 text-white rounded-xl px-4 py-3 outline-none text-sm"
-                 value={preferences.teacher_office_status || "VISIBLE"}
-                 onChange={(e) => setPreferences((p: any) => ({ ...p, teacher_office_status: e.target.value }))}
-               >
-                 <option value="VISIBLE">Visible (Accepting Meetings)</option>
-                 <option value="BUSY">Busy (Do Not Disturb)</option>
-                 <option value="OFFLINE">Offline</option>
-               </select>
+                  {/* Topic Management */}
+                  <div className="space-y-6 pt-8 border-t border-white/5">
+                    <h4 className="text-lg font-bold text-white flex items-center gap-2">
+                       <Cloud size={18} className="text-cyan-400"/>
+                       Subject & Topic Architecture
+                    </h4>
+                    <div className="space-y-4">
+                       {user?.subjects?.length === 0 ? (
+                         <div className="p-8 text-center border-white/5 border rounded-2xl text-white/30 text-xs italic">
+                            Select subjects above to manage their academic topics.
+                         </div>
+                       ) : user.subjects.map((sub: any) => (
+                         <div key={sub.id} className="glass p-6 rounded-3xl border border-white/5 space-y-4">
+                            <div className="flex items-center justify-between">
+                               <span className="font-bold text-white">{sub.name}</span>
+                               <button 
+                                 onClick={() => setSelectingSubjectId(selectingSubjectId === sub.id ? null : sub.id)}
+                                 className="text-[10px] font-black uppercase tracking-widest text-brand"
+                               >
+                                 + Add New Topic
+                               </button>
+                            </div>
+
+                            {selectingSubjectId === sub.id && (
+                              <div className="flex gap-2">
+                                <input 
+                                  value={newTopicName}
+                                  onChange={e => setNewTopicName(e.target.value)}
+                                  placeholder="E.g. Cell Biology Essentials"
+                                  className="flex-1 bg-black/40 border border-brand/30 rounded-xl px-4 py-2 text-white text-xs outline-none"
+                                />
+                                <button 
+                                  onClick={() => handleCreateTopic(sub.id)}
+                                  className="px-4 py-2 bg-brand text-white text-[10px] font-black uppercase rounded-xl"
+                                >
+                                  Deploy
+                                </button>
+                              </div>
+                            )}
+
+                            <div className="flex flex-wrap gap-2">
+                               {sub.topics?.map((t: any) => (
+                                 <span key={t.id} className="px-3 py-1 bg-white/5 border border-white/10 rounded-full text-[10px] text-white/60">
+                                   {t.name}
+                                 </span>
+                               ))}
+                               {(!sub.topics || sub.topics.length === 0) && (
+                                 <span className="text-[10px] text-white/20 italic">No topics mapped yet.</span>
+                               )}
+                            </div>
+                         </div>
+                       ))}
+                    </div>
+                  </div>
+
+                  <div className="pt-6 border-t border-white/5 space-y-6">
+                    {listItem("teacher_grading_alerts", "Submission Real-Time Alerts", "Notify immediately when a student turns in an assignment.", true)}
+                    {listItem("teacher_auto_grade", "AI Core Pre-Grading", "Allow Fusion AI to generate preliminary scores on essays.", true)}
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         );
+;
       case "admin_tools":
         return (
           <div className="space-y-6 border-red-500/30 border p-6 rounded-3xl bg-red-500/5">
