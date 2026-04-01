@@ -41,6 +41,7 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
     name: teacher.name,
     email: teacher.email,
     avatarUrl: teacher.avatarUrl,
+    coverUrl: (teacher as any).coverUrl,
     bio: teacher.bio,
     teacherProfile: teacher.teacherProfile,
     followerCount: teacher._count.followedBy,

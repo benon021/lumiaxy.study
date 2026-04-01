@@ -287,8 +287,8 @@ export default function SettingsPage() {
                 <div className="space-y-3">
                   {[
                     { label: "Role Tier", val: user?.role, color: "text-brand" },
-                    { label: "Joined", val: new Date(user?.createdAt).toLocaleDateString(), color: "text-white/40" },
-                    { label: "Contributions", val: "124 Modules", color: "text-white/40" }
+                    { label: "Joined", val: user?.createdAt ? new Date(user.createdAt).toLocaleDateString() : "N/A", color: "text-white/40" },
+                    { label: "Portfolio", val: `${user?.subjects?.length || 0} Specializations`, color: "text-white/40" }
                   ].map((s, i) => (
                     <div key={i} className="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/5">
                       <span className="text-[10px] font-black text-white/20 uppercase tracking-widest">{s.label}</span>

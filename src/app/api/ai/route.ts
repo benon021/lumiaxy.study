@@ -34,14 +34,35 @@ export async function POST(req: Request) {
 
 
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
     // 2. Format history for Gemini
-    // Gemini expects an array of { role: "user" | "model", parts: [{ text: string }] }
-    const history = messages.slice(0, -1).map((msg: any) => ({
-      role: msg.role === "assistant" ? "model" : "user",
-      parts: [{ text: msg.content }],
-    }));
+    // Filter out leading non-user messages and ensure alternating roles
+    let historyMessages = messages.slice(0, -1);
+    
+    // Find first user message index
+    const firstUserIndex = historyMessages.findIndex((m: any) => m.role === 'user');
+    const cleanHistoryMessages = firstUserIndex !== -1 ? historyMessages.slice(firstUserIndex) : [];
+
+    const history: any[] = [];
+    let lastRole: string | null = null;
+    
+    for (const msg of cleanHistoryMessages) {
+      if (msg.role === 'system') continue; // Skip system messages for history, handled elsewhere if needed
+
+      const role = (msg.role === "assistant" || msg.role === "model") ? "model" : "user";
+      
+      if (role === lastRole) {
+        // Append to last message parts if same role
+        history[history.length - 1].parts[0].text += "\n" + msg.content;
+      } else {
+        history.push({
+          role,
+          parts: [{ text: msg.content }],
+        });
+        lastRole = role;
+      }
+    }
 
     const lastMessage = messages[messages.length - 1];
     
@@ -109,10 +130,14 @@ export async function POST(req: Request) {
       role: "assistant",
       content: responseText,
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error("AI API Error:", error);
+    
+    // Return the actual error message so the user can see what's wrong (e.g. invalid API key)
+    const errorMessage = error?.message || "Internal server error";
+    
     return NextResponse.json(
-      { error: "Internal server error" },
+      { error: errorMessage },
       { status: 500 }
     );
   }

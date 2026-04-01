@@ -15,7 +15,8 @@ async function checkDB() {
     console.log("DB Check PASSED");
   } catch (error) {
     console.error("DB Check FAILED:");
-    console.error(error);
+    console.dir(error, { depth: null });
+    if (error.message) console.error("Error Message:", error.message);
   } finally {
     await prisma.$disconnect();
   }

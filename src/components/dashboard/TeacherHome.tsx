@@ -3,7 +3,7 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { Users, FileText, Star, CheckCircle2, ChevronRight, Activity, Eye, EyeOff, Bell, Plus, X } from "lucide-react";
+import { Users, FileText, Star, CheckCircle2, ChevronRight, Activity, Eye, EyeOff, Bell, Plus, X, BookOpen } from "lucide-react";
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import AIOrb from "../ai-orb/AIOrb";
@@ -205,6 +205,18 @@ export default function TeacherHome({ user }: { user: any }) {
           <div className="flex items-center justify-between px-2">
             <h3 className="text-lg font-bold text-white tracking-tight">Quick Actions</h3>
           </div>
+
+          <Link href="/dashboard/settings" className="block">
+            <div className="w-full text-left group flex items-center gap-4 p-4 rounded-3xl bg-pink-600/10 border border-pink-500/20 hover:border-pink-500/40 hover:bg-pink-600/20 transition-all shadow-lg">
+              <div className="p-3 rounded-2xl bg-pink-600/20 border border-white/5 group-hover:border-white/20 transition-all">
+                <BookOpen size={20} className="text-pink-400" />
+              </div>
+              <div className="flex-1">
+                <h4 className="text-sm font-bold text-white tracking-tight text-pink-400">Manage Subjects & Topics</h4>
+                <p className="text-[11px] text-white/30 font-medium">Add subjects and define curriculum topics</p>
+              </div>
+            </div>
+          </Link>
 
           <button 
             onClick={() => setIsPosting(true)}
