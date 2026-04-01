@@ -8,12 +8,23 @@ import AIOrb from "./ai-orb/AIOrb";
 
 export default function SiderAgent() {
   const [isOpen, setIsOpen] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [contextData, setContextData] = useState<any>(null);
   const [messages, setMessages] = useState<{ role: string, content: string }[]>([]);
   const [input, setInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const pathname = usePathname();
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  // Check login status
+  useEffect(() => {
+    fetch("/api/auth/me")
+      .then(res => res.json())
+      .then(data => {
+        if (data.user) setIsLoggedIn(true);
+      })
+      .catch(() => setIsLoggedIn(false));
+  }, []);
 
   // Load Active Tracking Context when opened
   useEffect(() => {
@@ -76,8 +87,8 @@ export default function SiderAgent() {
   };
 
 
-  // Don't render inside the full AI dashboard
-  if (pathname === "/dashboard/ai") return null;
+  // Don't render if not logged in or inside the full AI dashboard
+  if (!isLoggedIn || pathname === "/dashboard/ai") return null;
 
   return (
     <>

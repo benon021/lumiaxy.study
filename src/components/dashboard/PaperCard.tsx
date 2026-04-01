@@ -18,9 +18,11 @@ interface PaperProps {
   year: number;
   type: string;
   difficulty: "Easy" | "Medium" | "Hard";
+  onPreview?: () => void;
+  onDownload?: () => void;
 }
 
-export default function PaperCard({ title, subject, year, type, difficulty }: PaperProps) {
+export default function PaperCard({ title, subject, year, type, difficulty, onPreview, onDownload }: PaperProps) {
   const difficultyColors = {
     Easy: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
     Medium: "bg-amber-500/10 text-amber-400 border-amber-500/20",
@@ -64,12 +66,18 @@ export default function PaperCard({ title, subject, year, type, difficulty }: Pa
       
       {/* Actions */}
       <div className="flex items-center gap-2 mt-6 relative z-10">
-         <button className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-brand text-white text-[11px] font-bold hover:scale-[1.02] active:scale-[0.98] transition-all shadow-lg overflow-hidden group/btn relative">
+         <button 
+          onClick={onPreview}
+          className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-brand text-white text-[11px] font-bold hover:scale-[1.02] active:scale-[0.98] transition-all shadow-lg overflow-hidden group/btn relative"
+         >
             <div className="absolute inset-0 bg-white/10 opacity-0 group-hover/btn:opacity-100 transition-opacity" />
             <Eye size={14} />
             Preview
          </button>
-         <button className="p-2.5 rounded-xl bg-white/5 border border-white/10 text-white/40 hover:text-white transition-all group/dl">
+         <button 
+          onClick={onDownload}
+          className="p-2.5 rounded-xl bg-white/5 border border-white/10 text-white/40 hover:text-white transition-all group/dl"
+         >
             <Download size={16} className="group-hover/dl:translate-y-0.5 transition-transform" />
          </button>
          <button className="p-2.5 rounded-xl bg-white/5 border border-white/10 text-white/40 hover:text-white transition-all">

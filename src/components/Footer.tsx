@@ -37,9 +37,9 @@ const footerLinks = {
 };
 
 const socials = [
-  { icon: Twitter, label: "Twitter", href: "/social/twitter" },
-  { icon: Github, label: "GitHub", href: "/social/github" },
-  { icon: Linkedin, label: "LinkedIn", href: "/social/linkedin" },
+  { icon: Twitter, label: "Twitter", href: "https://x.com/LumiaxyStudy" },
+  { icon: Github, label: "GitHub", href: "https://github.com/lumiaxy-study" },
+  { icon: Linkedin, label: "LinkedIn", href: "https://linkedin.com/company/lumiaxy-study" },
 ];
 
 export default function Footer() {

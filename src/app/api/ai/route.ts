@@ -1,3 +1,4 @@
+
 import { NextResponse } from "next/server";
 import prisma from "@/lib/db";
 import { getUserFromRequest } from "@/lib/auth";
@@ -10,7 +11,7 @@ export async function POST(req: Request) {
 
     // 1. Get API Key based on source
     const keyName = source === "side" ? "GEMINI_SIDE_API_KEY" : "GEMINI_MAIN_API_KEY";
-    
+
     let apiKey = process.env[keyName];
 
     // Check DB first if possible, then fallback to .env
@@ -39,19 +40,19 @@ export async function POST(req: Request) {
     // 2. Format history for Gemini
     // Filter out leading non-user messages and ensure alternating roles
     let historyMessages = messages.slice(0, -1);
-    
+
     // Find first user message index
     const firstUserIndex = historyMessages.findIndex((m: any) => m.role === 'user');
     const cleanHistoryMessages = firstUserIndex !== -1 ? historyMessages.slice(firstUserIndex) : [];
 
     const history: any[] = [];
     let lastRole: string | null = null;
-    
+
     for (const msg of cleanHistoryMessages) {
       if (msg.role === 'system') continue; // Skip system messages for history, handled elsewhere if needed
 
       const role = (msg.role === "assistant" || msg.role === "model") ? "model" : "user";
-      
+
       if (role === lastRole) {
         // Append to last message parts if same role
         history[history.length - 1].parts[0].text += "\n" + msg.content;
@@ -65,7 +66,7 @@ export async function POST(req: Request) {
     }
 
     const lastMessage = messages[messages.length - 1];
-    
+
     // 3. Handle image if present
     let result;
     if (image) {
@@ -132,10 +133,10 @@ export async function POST(req: Request) {
     });
   } catch (error: any) {
     console.error("AI API Error:", error);
-    
+
     // Return the actual error message so the user can see what's wrong (e.g. invalid API key)
     const errorMessage = error?.message || "Internal server error";
-    
+
     return NextResponse.json(
       { error: errorMessage },
       { status: 500 }

@@ -59,7 +59,17 @@ function DesktopNavIcon({ href, icon: Icon, label, mouseX }: any) {
 export default function Navbar() {
   const mouseX = useMotionValue(Infinity);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const pathname = usePathname();
+
+  useEffect(() => {
+    fetch("/api/auth/me")
+      .then(res => res.json())
+      .then(data => {
+        if (data.user) setIsLoggedIn(true);
+      })
+      .catch(() => setIsLoggedIn(false));
+  }, []);
 
   // If in dashboard, do not show the landing page navbar
   if (pathname?.startsWith("/dashboard")) return null;
@@ -91,9 +101,10 @@ export default function Navbar() {
           
           <div className="w-[1px] h-8 bg-white/10 mx-1 mb-3" />
           
-          <Link href="/login" className="mb-1 ml-2">
-            <div className="h-[50px] px-6 rounded-2xl bg-brand text-white text-sm font-bold flex items-center gap-2 hover:scale-[1.03] active:scale-95 transition-all shadow-lg shadow-brand/20">
-              <LogIn size={16} /> Login
+          <Link href={isLoggedIn ? "/dashboard" : "/login"} className="mb-1 ml-2">
+            <div className={`h-[50px] px-6 rounded-2xl ${isLoggedIn ? 'bg-emerald-500/80' : 'bg-brand'} text-white text-sm font-bold flex items-center gap-2 hover:scale-[1.03] active:scale-95 transition-all shadow-lg`}>
+              {isLoggedIn ? <Layers size={16} /> : <LogIn size={16} />}
+              {isLoggedIn ? "Nexus Dashboard" : "Operator Login"}
             </div>
           </Link>
         </motion.nav>
@@ -133,9 +144,9 @@ export default function Navbar() {
                  </Link>
                ))}
                <div className="h-[1px] w-full bg-white/10 my-2" />
-               <Link href="/login" onClick={() => setMobileMenuOpen(false)}>
-                 <div className="w-full py-4 rounded-xl bg-brand text-white text-center font-bold text-lg shadow-lg">
-                   Sign / Log In
+               <Link href={isLoggedIn ? "/dashboard" : "/login"} onClick={() => setMobileMenuOpen(false)}>
+                 <div className={`w-full py-4 rounded-xl ${isLoggedIn ? 'bg-emerald-500' : 'bg-brand'} text-white text-center font-bold text-lg shadow-lg`}>
+                   {isLoggedIn ? "Enter Neural Dashboard" : "Sign / Log In"}
                  </div>
                </Link>
             </motion.div>

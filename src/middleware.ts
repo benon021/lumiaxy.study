@@ -17,8 +17,9 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  // Optional: If the user is already logged in, they shouldn't visit /login or /signup
+  // Optional: If the user is already logged in, they shouldn't visit /login, /signup, or the home page (/)
   if (
+    request.nextUrl.pathname === "/" ||
     request.nextUrl.pathname.startsWith("/login") ||
     request.nextUrl.pathname.startsWith("/signup")
   ) {
@@ -32,5 +33,5 @@ export async function middleware(request: NextRequest) {
 
 // Ensure the middleware is only called for relevant paths
 export const config = {
-  matcher: ["/dashboard/:path*", "/login", "/signup"],
+  matcher: ["/", "/dashboard/:path*", "/login", "/signup"],
 };
