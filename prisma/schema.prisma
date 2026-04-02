@@ -35,6 +35,7 @@ model User {
   submittedWork   Submission[]
   teacherProfile  TeacherProfile?
   badges          UserBadge[]
+  subjectEnrollments SubjectEnrollment[]
 }
 
 model TeacherProfile {
@@ -58,6 +59,7 @@ model Subject {
   createdAt   DateTime         @default(now())
   topics      Topic[]
   teachers    TeacherProfile[]
+  enrollments SubjectEnrollment[]
 }
 
 model Topic {
@@ -69,7 +71,19 @@ model Topic {
   bookmarks   Bookmark[]
   threads     DiscussionThread[] @relation("TopicThreads")
   materials   Material[]
+  assignments Assignment[]
   subject     Subject            @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+}
+
+model SubjectEnrollment {
+  id        String   @id @default(cuid())
+  userId    String
+  subjectId String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  subject   Subject  @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, subjectId])
 }
 
 model Material {
@@ -96,13 +110,18 @@ model Assignment {
   id          String       @id @default(cuid())
   title       String
   description String
+  type        String       @default("TEXT")
   dueDate     DateTime?
   maxScore    Float        @default(100)
+  topicId     String
   teacherId   String
+  attachments String?      // Store as JSON string
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
-  teacher     User         @relation(fields: [teacherId], references: [id])
+  teacher     User                 @relation(fields: [teacherId], references: [id])
+  topic       Topic                @relation(fields: [topicId], references: [id], onDelete: Cascade)
   submissions Submission[]
+  questions   AssignmentQuestion[]
 }
 
 model Submission {
@@ -111,7 +130,9 @@ model Submission {
   studentId    String
   content      String?
   fileUrl      String?
+  answers      String?    // Store as JSON string
   score        Float?
+  status       String     @default("SUBMITTED")
   feedback     String?
   submittedAt  DateTime   @default(now())
   gradedAt     DateTime?
@@ -119,6 +140,16 @@ model Submission {
   student      User       @relation(fields: [studentId], references: [id])
 
   @@unique([assignmentId, studentId])
+}
+
+model AssignmentQuestion {
+  id            String     @id @default(cuid())
+  assignmentId  String
+  text          String
+  options       String     // JSON string of options
+  correctAnswer String
+  createdAt     DateTime   @default(now())
+  assignment    Assignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
 }
 
 model Quiz {

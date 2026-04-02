@@ -100,6 +100,7 @@ async function main() {
       description: "Solve 10 derivative problems from the textbook. Show all working.",
       dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days from now
       teacherId: teacher.id,
+      topicId: calculus.id,
     },
   });
 
