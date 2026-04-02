@@ -15,10 +15,10 @@ interface AIOrbProps {
   reactive?: boolean;
 }
 
-export default function AIOrb({ 
-  state = "idle", 
-  size = 120, 
-  className, 
+export default function AIOrb({
+  state = "idle",
+  size = 120,
+  className,
   onClick,
   reactive = true
 }: AIOrbProps) {
@@ -30,7 +30,7 @@ export default function AIOrb({
   const analyserRef = useRef<AnalyserNode | null>(null);
   const animationFrameRef = useRef<number>();
 
-  // Mouse parallax effect
+  // Parallax logic for 3D glass feel
   const handleMouseMove = (e: React.MouseEvent) => {
     if (!containerRef.current) return;
     const rect = containerRef.current.getBoundingClientRect();
@@ -39,9 +39,7 @@ export default function AIOrb({
     setMousePos({ x, y });
   };
 
-  const handleMouseLeave = () => {
-    setMousePos({ x: 0, y: 0 });
-  };
+  const handleMouseLeave = () => setMousePos({ x: 0, y: 0 });
 
   const handleClick = (e: React.MouseEvent) => {
     const rect = containerRef.current?.getBoundingClientRect();
@@ -50,89 +48,34 @@ export default function AIOrb({
       setRipples(prev => [...prev, { id, x: e.clientX - rect.left, y: e.clientY - rect.top }]);
       setTimeout(() => setRipples(prev => prev.filter(r => r.id !== id)), 600);
     }
-    
     if (onClick) onClick();
-    
-    if (state === "idle" && reactive) {
-      startListening();
-    }
   };
 
-  const startListening = async () => {
-    try {
-      if (!audioContextRef.current) {
-        audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
-      }
-      
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const source = audioContextRef.current.createMediaStreamSource(stream);
-      analyserRef.current = audioContextRef.current.createAnalyser();
-      analyserRef.current.fftSize = 256;
-      source.connect(analyserRef.current);
-      
-      const bufferLength = analyserRef.current.frequencyBinCount;
-      const dataArray = new Uint8Array(bufferLength);
-      
-      const updateVolume = () => {
-        if (!analyserRef.current) return;
-        analyserRef.current.getByteFrequencyData(dataArray);
-        let sum = 0;
-        for (let i = 0; i < bufferLength; i++) {
-          sum += dataArray[i];
-        }
-        const average = sum / bufferLength;
-        setVolume(average / 128); // Normalize to 0-1
-        animationFrameRef.current = requestAnimationFrame(updateVolume);
-      };
-      
-      updateVolume();
-    } catch (err) {
-      console.error("Error accessing microphone:", err);
-    }
+  // Lumiaxy Palette (Reference image)
+  const colors = {
+    primary: "#6272f1", // Deep Purple
+    accent: "#00e5ff",  // Electric Blue
+    glow: "#ec4899",    // Soft Pink
+    core: "#1e1b4b"     // Deep Indigo
   };
 
-  useEffect(() => {
-    return () => {
-      if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
-      if (audioContextRef.current) audioContextRef.current.close();
-    };
-  }, []);
-
-  // Map state to CSS classes
-  const orbClasses = clsx(
-    styles.orb,
-    state === "listening" && styles.listening,
-    state === "thinking" && styles.thinking,
-    state === "speaking" && styles.speaking
-  );
-
-  // Dynamic values based on volume and state
-  const scale = 1 + (state === "speaking" || state === "listening" ? volume * 0.2 : 0);
-  const glowIntensity = 0.3 + (state === "speaking" || state === "listening" ? volume * 0.5 : 0);
-
-  // Hyper-complex neural energy strands crossing inside the glass orb
+  // Neural Energy Strands (Alive Energy)
   const strands = [
-    { id: 1, color: "#ff7200", d: "M 10 50 C 30 10, 70 80, 90 50", duration: 3.5 },
-    { id: 2, color: "#00e5ff", d: "M 15 30 C 40 90, 60 10, 85 70", duration: 2.8 },
-    { id: 3, color: "#eba354", d: "M 0 50 C 50 20, 50 80, 100 50", duration: 4.2 },
-    { id: 4, color: "#00bfff", d: "M 20 80 C 40 20, 70 80, 80 20", duration: 3.1 },
-    { id: 5, color: "#ff4d00", d: "M 10 20 C 50 90, 80 10, 90 90", duration: 4.8 },
-    { id: 6, color: "#4dffff", d: "M 30 10 C 10 70, 90 70, 70 10", duration: 2.5 },
-    { id: 7, color: "#fff", d: "M 40 40 C 60 40, 60 60, 40 60", duration: 1.5, strokeWidth: 0.5 }, // core tiny light
+    { id: 1, color: colors.primary, d: "M 10 50 C 30 10, 70 80, 90 50", duration: 3.5 },
+    { id: 2, color: colors.accent, d: "M 15 30 C 40 90, 60 10, 85 70", duration: 2.8 },
+    { id: 3, color: colors.glow, d: "M 0 50 C 50 20, 50 80, 100 50", duration: 4.2 },
+    { id: 4, color: "#fff", d: "M 20 80 C 40 20, 70 80, 80 20", duration: 3.1, opacity: 0.3 },
+    { id: 5, color: colors.primary, d: "M 30 10 C 10 70, 90 70, 70 10", duration: 2.5 },
   ];
 
-  // Random particles for the stars inside the void
-  const particles = Array.from({ length: 40 }).map((_, i) => ({
-    id: i,
-    x: 20 + Math.random() * 60,
-    y: 20 + Math.random() * 60,
-    size: 0.5 + Math.random() * 1.5,
-    duration: 2 + Math.random() * 3,
-    delay: Math.random() * 2
-  }));
+  const orbClasses = clsx(
+    styles.orb,
+    styles[state],
+    className
+  );
 
   return (
-    <div 
+    <div
       ref={containerRef}
       className={clsx(styles.orbContainer, className)}
       style={{ width: size, height: size }}
@@ -140,86 +83,65 @@ export default function AIOrb({
       onMouseLeave={handleMouseLeave}
       onClick={handleClick}
     >
-      <motion.div 
+      <motion.div
         className={orbClasses}
         animate={{
-          rotateX: mousePos.y * 30,
-          rotateY: mousePos.x * 30,
-          scale: scale,
+          rotateX: mousePos.y * 25,
+          rotateY: mousePos.x * 25,
+          scale: state === "listening" || state === "speaking" ? [1, 1.05, 1] : 1,
         }}
-        transition={{ type: "spring", stiffness: 150, damping: 15 }}
+        transition={{ type: "spring", stiffness: 100, damping: 15 }}
       >
         <div className={styles.orbLayer} />
         <div className={styles.orbLayer2} />
-        
-        {/* Internal Components */}
+
+        {/* Dynamic Inner core with star particles */}
         <div className={styles.orbInner}>
-           <div className={styles.innerCore} /> {/* Behind strands now */}
-           {particles.map((p) => (
-              <motion.div
-                key={p.id}
-                className={styles.particle}
-                style={{ left: `${p.x}%`, top: `${p.y}%`, width: p.size, height: p.size }}
+          <div className={styles.innerCore} />
+          
+          <svg className={styles.strandsContainer} viewBox="0 0 100 100" preserveAspectRatio="none">
+            {strands.map((s, i) => (
+              <motion.path
+                key={s.id}
+                d={s.d}
+                stroke={s.color}
+                strokeWidth={1.5}
+                className={styles.strand}
                 animate={{
-                  opacity: [0.1, 1, 0.1],
-                  scale: [0.8, 1.5, 0.8]
+                  d: [
+                    s.d,
+                    `M ${5 + i * 8} ${30 + (i % 2 ? 20 : -10)} C 50 ${i % 2 ? 0 : 100}, ${90 - i * 8} ${i % 2 ? 100 : 0}, 85 50`,
+                    s.d
+                  ],
+                  opacity: s.opacity || (state === "idle" ? 0.6 : 1),
+                  strokeWidth: state === "thinking" ? 2.5 : 1.5
                 }}
                 transition={{
-                  duration: p.duration,
+                  duration: s.duration / (state === "thinking" ? 2 : 1),
                   repeat: Infinity,
-                  delay: p.delay,
                   ease: "easeInOut"
                 }}
               />
-           ))}
-           <svg className={styles.strandsContainer} viewBox="0 0 100 100" preserveAspectRatio="none">
-             {strands.map((strand, i) => (
-                <motion.path
-                  key={strand.id}
-                  d={strand.d}
-                  stroke={strand.color}
-                  className={styles.strand}
-                  animate={{
-                    d: [
-                      strand.d,
-                      `M ${5 + i * 5} ${40 + (i % 2 ? 10 : -10)} C 50 ${i % 2 ? 10 : 90}, ${90 - i * 5} ${i % 2 ? 90 : 10}, 80 50`,
-                      strand.d
-                    ],
-                    strokeWidth: strand.strokeWidth || (1.5 + volume * 4),
-                    opacity: 0.6 + volume * 0.4
-                  }}
-                  transition={{
-                    duration: strand.duration / (state === "thinking" ? 2 : 1),
-                    repeat: Infinity,
-                    ease: "easeInOut"
-                  }}
-                />
-             ))}
-           </svg>
+            ))}
+          </svg>
         </div>
 
-        {/* Optics Layers */}
+        {/* Cinematic Optics (Glass and Shines) */}
         <div className={styles.refractionLayer} />
         <div className={styles.surfaceReflection} />
-        
-        {/* Glow effect */}
-        <div 
-          className={styles.glow} 
-          style={{ opacity: glowIntensity }}
-        />
       </motion.div>
 
-      {/* Ripple effects */}
+      {/* Touch/Click Feedback */}
       <AnimatePresence>
-        {ripples.map(ripple => (
+        {ripples.map(r => (
           <motion.span
-            key={ripple.id}
+            key={r.id}
             className={styles.ripple}
-            style={{ left: ripple.x, top: ripple.y }}
-            initial={{ scale: 0, opacity: 1 }}
-            animate={{ scale: 4, opacity: 0 }}
+            style={{ left: r.x, top: r.y }}
+            initial={{ scale: 0, opacity: 0.8 }}
+            animate={{ scale: 3, opacity: 0 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.6, ease: "easeOut" }}
+            transition={{ duration: 0.6 }}
           />
         ))}
       </AnimatePresence>

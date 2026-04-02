@@ -16,7 +16,7 @@ const features = [
   },
   {
     icon: <PenTool className="w-6 h-6 text-emerald-400" />,
-    title: "Grading Nexus",
+    title: "Lumiaxy Grading",
     description: "Professors execute instant performance grades accompanied by deep feedback loops, triggering auto-notifications to students immediately."
   },
   {
@@ -40,9 +40,9 @@ export default function Features() {
   return (
     <section id="features" className="py-32 relative z-10">
       <div className="max-w-7xl mx-auto px-4 lg:px-8">
-        
+
         <div className="text-center max-w-3xl mx-auto mb-20">
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
@@ -51,7 +51,7 @@ export default function Features() {
             <Sparkles className="text-brand w-4 h-4" />
             <span className="text-sm font-bold text-brand uppercase tracking-widest">Beyond Traditional Learning</span>
           </motion.div>
-          <motion.h2 
+          <motion.h2
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
@@ -60,7 +60,7 @@ export default function Features() {
           >
             Engineered for African Geniuses.
           </motion.h2>
-          <motion.p 
+          <motion.p
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}

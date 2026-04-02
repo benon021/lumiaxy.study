@@ -15,7 +15,7 @@ interface PaperProps {
   id: string;
   title: string;
   subject: string;
-  year: number;
+  year: string | number;
   type: string;
   difficulty: "Easy" | "Medium" | "Hard";
   onPreview?: () => void;

@@ -24,7 +24,7 @@ export default function AdminDashboard() {
     switch (activeView) {
       case "Overview":
         return (
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
@@ -46,15 +46,15 @@ export default function AdminDashboard() {
               <RevenueAnalytics />
             </div>
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-               <div className="lg:col-span-1">
-                  <CalendarPanel />
-               </div>
-               <div className="lg:col-span-1">
-                  <QuickTasks />
-               </div>
-               <div className="lg:col-span-1">
-                  <AIAssistant />
-               </div>
+              <div className="lg:col-span-1">
+                <CalendarPanel />
+              </div>
+              <div className="lg:col-span-1">
+                <QuickTasks />
+              </div>
+              <div className="lg:col-span-1">
+                <AIAssistant />
+              </div>
             </div>
             <PricingManager />
           </motion.div>
@@ -63,7 +63,7 @@ export default function AdminDashboard() {
       case "All":
       case "Deleted":
         return (
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -20 }}
@@ -74,7 +74,7 @@ export default function AdminDashboard() {
         );
       case "Projects":
         return (
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 1.05 }}
@@ -85,7 +85,7 @@ export default function AdminDashboard() {
         );
       case "AI Assistant":
         return (
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: 100 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 100 }}
@@ -97,11 +97,11 @@ export default function AdminDashboard() {
       default:
         return (
           <div className="flex flex-col items-center justify-center p-20 text-center">
-             <div className="w-20 h-20 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center mb-6">
-                <div className="w-10 h-10 border-2 border-brand/30 border-t-brand rounded-full animate-spin" />
-             </div>
-             <h2 className="text-2xl font-bold text-white mb-2">{activeView} Panel</h2>
-             <p className="text-white/40">This module is currently being optimized by Fusion AI...</p>
+            <div className="w-20 h-20 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center mb-6">
+              <div className="w-10 h-10 border-2 border-brand/30 border-t-brand rounded-full animate-spin" />
+            </div>
+            <h2 className="text-2xl font-bold text-white mb-2">{activeView} Panel</h2>
+            <p className="text-white/40">This module is currently being optimized by Fusion AI...</p>
           </div>
         );
     }
@@ -124,7 +124,7 @@ export default function AdminDashboard() {
 
         <Footer />
       </main>
-      
+
       {/* Background Gradients */}
       <div className="fixed inset-0 pointer-events-none -z-10 overflow-hidden">
         <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-brand/5 rounded-full blur-[120px]" />

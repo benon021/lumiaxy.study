@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion, useMotionValue, useSpring, useTransform, AnimatePresence } from "framer-motion";
-import { 
+import {
   Home, Star, Lightbulb, Activity, CreditCard, Layers, LogIn, Menu, X
 } from "lucide-react";
 import AIOrb from "./ai-orb/AIOrb";
@@ -23,7 +23,7 @@ function DesktopNavIcon({ href, icon: Icon, label, mouseX }: any) {
   // Increased width and hit area from 42/70 to 50/90
   const widthTransform = useTransform(distance, [-120, 0, 120], [50, 90, 50]);
   const heightTransform = useTransform(distance, [-120, 0, 120], [50, 90, 50]);
-  
+
   const width = useSpring(widthTransform, { mass: 0.1, stiffness: 300, damping: 20 });
   const height = useSpring(heightTransform, { mass: 0.1, stiffness: 300, damping: 20 });
 
@@ -40,7 +40,7 @@ function DesktopNavIcon({ href, icon: Icon, label, mouseX }: any) {
         className="flex items-center justify-center rounded-2xl border border-transparent bg-transparent text-white/50 hover:text-white group-hover:bg-white/5 backdrop-blur-md group-hover:border-white/10 shadow-none group-hover:shadow-xl transition-all"
       >
         <Icon className="w-1/2 h-1/2 transition-colors" />
-        
+
         {/* Tooltip */}
         <AnimatePresence>
           <motion.div
@@ -89,7 +89,7 @@ export default function Navbar() {
           {/* Logo / Home */}
           <Link href="/" className="relative group mr-2 h-[50px] w-[50px] flex items-center justify-center">
             <div className="w-full h-full flex items-center justify-center bg-transparent group-hover:scale-110 transition-transform">
-               <AIOrb size={44} state="idle" reactive={false} className="opacity-80 group-hover:opacity-100" />
+              <AIOrb size={44} state="idle" reactive={false} className="opacity-80 group-hover:opacity-100" />
             </div>
           </Link>
 
@@ -98,13 +98,13 @@ export default function Navbar() {
           {navLinks.slice(1).map((link) => (
             <DesktopNavIcon key={link.href} {...link} mouseX={mouseX} />
           ))}
-          
+
           <div className="w-[1px] h-8 bg-white/10 mx-1 mb-3" />
-          
+
           <Link href={isLoggedIn ? "/dashboard" : "/login"} className="mb-1 ml-2">
             <div className={`h-[50px] px-6 rounded-2xl ${isLoggedIn ? 'bg-emerald-500/80' : 'bg-brand'} text-white text-sm font-bold flex items-center gap-2 hover:scale-[1.03] active:scale-95 transition-all shadow-lg`}>
               {isLoggedIn ? <Layers size={16} /> : <LogIn size={16} />}
-              {isLoggedIn ? "Nexus Dashboard" : "Operator Login"}
+              {isLoggedIn ? "Lumiaxy Dashboard" : "Operator Login"}
             </div>
           </Link>
         </motion.nav>
@@ -113,42 +113,42 @@ export default function Navbar() {
       {/* --- MOBILE NAVBAR --- */}
       <div className="md:hidden fixed top-0 left-0 right-0 z-50 px-4 py-4">
         <div className="flex items-center justify-between bg-dark-900/80 backdrop-blur-xl border border-white/10 rounded-2xl px-4 py-3 shadow-2xl">
-           <Link href="/" className="flex items-center gap-2">
-              <AIOrb size={28} state="idle" reactive={false} />
-              <span className="font-bold text-white text-sm tracking-widest">LUMIAXY</span>
-           </Link>
-           <button 
-             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-             className="p-2 -mr-2 text-white/70 hover:text-white"
-           >
-             {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
-           </button>
+          <Link href="/" className="flex items-center gap-2">
+            <AIOrb size={28} state="idle" reactive={false} />
+            <span className="font-bold text-white text-sm tracking-widest">LUMIAXY</span>
+          </Link>
+          <button
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            className="p-2 -mr-2 text-white/70 hover:text-white"
+          >
+            {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+          </button>
         </div>
 
         {/* Mobile Dropdown */}
         <AnimatePresence>
           {mobileMenuOpen && (
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, y: -20, scale: 0.95 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -20, scale: 0.95 }}
               className="absolute top-20 left-4 right-4 bg-dark-900/95 backdrop-blur-2xl border border-white/10 rounded-3xl p-6 shadow-2xl flex flex-col gap-4"
             >
-               {navLinks.map((link) => (
-                 <Link 
-                   key={link.href} href={link.href} 
-                   onClick={() => setMobileMenuOpen(false)}
-                   className="flex items-center gap-4 text-white/70 hover:text-white hover:bg-white/5 p-4 rounded-2xl font-bold text-lg transition-colors"
-                 >
-                   <link.icon size={20} className="text-brand" /> {link.label}
-                 </Link>
-               ))}
-               <div className="h-[1px] w-full bg-white/10 my-2" />
-               <Link href={isLoggedIn ? "/dashboard" : "/login"} onClick={() => setMobileMenuOpen(false)}>
-                 <div className={`w-full py-4 rounded-xl ${isLoggedIn ? 'bg-emerald-500' : 'bg-brand'} text-white text-center font-bold text-lg shadow-lg`}>
-                   {isLoggedIn ? "Enter Neural Dashboard" : "Sign / Log In"}
-                 </div>
-               </Link>
+              {navLinks.map((link) => (
+                <Link
+                  key={link.href} href={link.href}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center gap-4 text-white/70 hover:text-white hover:bg-white/5 p-4 rounded-2xl font-bold text-lg transition-colors"
+                >
+                  <link.icon size={20} className="text-brand" /> {link.label}
+                </Link>
+              ))}
+              <div className="h-[1px] w-full bg-white/10 my-2" />
+              <Link href={isLoggedIn ? "/dashboard" : "/login"} onClick={() => setMobileMenuOpen(false)}>
+                <div className={`w-full py-4 rounded-xl ${isLoggedIn ? 'bg-emerald-500' : 'bg-brand'} text-white text-center font-bold text-lg shadow-lg`}>
+                  {isLoggedIn ? "Enter Neural Dashboard" : "Sign / Log In"}
+                </div>
+              </Link>
             </motion.div>
           )}
         </AnimatePresence>
